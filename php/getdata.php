@@ -5,20 +5,16 @@
     $board = $_POST['board'];
     $myObj = (object)array();
     $pdo = Database::connect();
-    $sql = 'SELECT * FROM esp32_table_dht11_leds_update WHERE board="' . $board . '"';
+    $sql = 'SELECT * FROM esp32_activity WHERE board="' . $board . '" order by date desc, time desc limit 1';
     // foreach ($pdo->query($sql) as $row) {
 
       $q = $pdo->prepare($sql);
       $q->execute();
       $row = $q->fetch();
-
-      $date = date_create($row['date']);
-      $dateFormat = date_format($date,"d-m-Y");
       $myObj->board = $row['board'];
-      $myObj->LED_01 = $row['LED_01'];
-      $myObj->LED_02 = $row['LED_02'];
+      $myObj->activity = $row['activity'];
       $myObj->ls_time = $row['time'];
-      $myObj->ls_date = $dateFormat;
+      $date = date_create($row['date']);
       $myJSON = json_encode($myObj);
       echo $myJSON;
     // }

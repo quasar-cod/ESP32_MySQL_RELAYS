@@ -59,7 +59,7 @@
 
   <body>
     <div class="topnav">
-      <p>ESP32 WITH MYSQL</p>
+      <p>Tappa</p>
     </div>
     <br>
     <div class="content">
@@ -67,16 +67,16 @@
         <!--*************************************************** -->
         <div class="card">
           <div class="card-header">
-            <h3 style="font-size: 1rem;">seminterrato</h3>
+            <h3 style="font-size: 1rem;">cantina</h3>
           </div>            
           <h3 style="font-size: 0.7rem;"><span id="ESP32_01_LTRD"></span></h3>
           <div class="three-state-switch">
-            <input type="radio" id="pos_down" name="position" value="DOWN" onclick="SetThreeState('ESP32_01','DOWN')">
-            <label for="pos_down">DOWN</label>
-            <input type="radio" id="pos_off" name="position" value="O" onclick="SetThreeState('ESP32_01','O')" checked>
-            <label for="pos_off">O</label>
-            <input type="radio" id="pos_up" name="position" value="UP" onclick="SetThreeState('ESP32_01','UP')">
-            <label for="pos_up">UP</label>
+            <input type="radio" id="pos_down1" name="position" value="DOWN" onclick="SetThreeState('ESP32_01','DOWN')">
+            <label for="pos_down1">DOWN</label>
+            <input type="radio" id="pos_off1" name="position" value="O" onclick="SetThreeState('ESP32_01','OFF')" checked>
+            <label for="pos_off1">O</label>
+            <input type="radio" id="pos_up1" name="position" value="UP" onclick="SetThreeState('ESP32_01','UP')">
+            <label for="pos_up1">UP</label>
           </div>
         </div>
         <!--*************************************************** -->
@@ -88,7 +88,7 @@
           <div class="three-state-switch">
             <input type="radio" id="pos_down2" name="position" value="DOWN" onclick="SetThreeState('ESP32_02','DOWN')">
             <label for="pos_down2">DOWN</label>
-            <input type="radio" id="pos_off2" name="position" value="O" onclick="SetThreeState('ESP32_02','O')" checked>
+            <input type="radio" id="pos_off2" name="position" value="O" onclick="SetThreeState('ESP32_02','OFF')" checked>
             <label for="pos_off2">O</label>
             <input type="radio" id="pos_up2" name="position" value="UP" onclick="SetThreeState('ESP32_02','UP')">
             <label for="pos_up2">UP</label>
@@ -125,13 +125,13 @@
         if (this.readyState == 4 && this.status == 200) {
           }
         }
-        xmlhttp.open("POST","updatedata1.php",true);
+        xmlhttp.open("POST","updatedata.php",true);
         xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xmlhttp.send("board="+board+"&state="+state);
 }//------------------------------------------------------------
       function myTimer() {
         Get_Data("ESP32_01");
-//        Get_Data("ESP32_02");
+        Get_Data("ESP32_02");
       }
 //------------------------------------------------------------
       function Get_Data(board) {
@@ -145,18 +145,16 @@
         xmlhttp.onreadystatechange = function() {
           if (this.readyState == 4 && this.status == 200) {
             const myObj = JSON.parse(this.responseText);
-            // if (myObj.board == "ESP32_01") {
+            if (myObj.board == "ESP32_01") {
               document.getElementById("ESP32_01_LTRD").innerHTML = "Last Date: " + myObj.ls_date + " Time: " + myObj.ls_time ;
-              if (myObj.LED_01 == "ON") {
-                document.getElementById("pos_down").checked = true;
-              } 
-              if (myObj.LED_02 == "ON") {
-                document.getElementById("pos_up").checked = true;
-              }  
-              if(myObj.LED_01 == "OFF" && myObj.LED_02 == "OFF"){
-                document.getElementById("pos_off").checked = true;
+              if (myObj.activity == "DOWN") {
+                document.getElementById("pos_down1").checked = true;
+              } elseif (myObj.activity == "UP") {
+                document.getElementById("pos_up1").checked = true;
+              } elseif(myObj.activity == "OFF" ){
+                document.getElementById("pos_off1").checked = true;
               }
-            // }
+            }
           }
         };
         console.log("getting board: " ,board);
