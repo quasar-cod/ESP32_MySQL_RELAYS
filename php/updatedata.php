@@ -20,7 +20,7 @@
     $myObj->ls_date = $dt;
     $myJSON = json_encode($myObj);  
     echo $myJSON;
-    //echo $sql;
+    // echo $sql;
     Database::disconnect();
   }
 ?>

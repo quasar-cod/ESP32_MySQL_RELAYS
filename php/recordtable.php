@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
   <head>
-    <title>ESP32 WITH MYSQL DATABASE</title>
+    <title>tappa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
       html {font-family: Arial; display: inline-block; text-align: center;}
@@ -19,7 +19,7 @@
         margin-right: auto;
         font-size: 0.9em;
         font-family: sans-serif;
-        min-width: 400px;
+        min-width: 360px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
         border-radius: 0.5em;
         overflow: hidden;
@@ -101,26 +101,19 @@
   
   <body>
     <div class="topnav">
-      <h3>ESP32 WITH MYSQL DATABASE</h3>
+      <h3>Tappa</h3>
     </div>
     
     <br>
     
-    <h3 style="color: #0c6980;">ESP32_01 RECORD DATA TABLE</h3>
+    <h3 style="color: #0c6980;">Tappa</h3>
     
     <table class="styled-table" id= "table_id">
       <thead>
         <tr>
-          <th>NO</th>
-          <th>ID</th>
           <th>BOARD</th>
-          <th>TEMPERATURE (°C)</th>
-          <th>HUMIDITY (%)</th>
-          <th>STATUS READ SENSOR DHT11</th>
-          <th>LED 01</th>
-          <th>LED 02</th>
-          <th>TIME</th>
-          <th>DATE (dd-mm-yyyy)</th>
+          <th>activity</th>
+          <th>DATE/TIME</th>
         </tr>
       </thead>
       <tbody id="tbody_table_record">
@@ -133,22 +126,13 @@
           // This table is used to store and record DHT11 sensor data updated by ESP32. 
           // This table is also used to store and record the state of the LEDs, the state of the LEDs is controlled from the "home.php" page. 
           // To store data, this table is operated with the "INSERT" command, so this table will contain many rows.
-          $sql = 'SELECT * FROM esp32_table_dht11_leds_record ORDER BY date, time';
+          $sql = 'SELECT * FROM esp32_activity ORDER BY date, time';
           foreach ($pdo->query($sql) as $row) {
-            $date = date_create($row['date']);
-            $dateFormat = date_format($date,"d-m-Y");
             $num++;
             echo '<tr>';
-            echo '<td>'. $num . '</td>';
-            echo '<td class="bdr">'. $row['id'] . '</td>';
             echo '<td class="bdr">'. $row['board'] . '</td>';
-            echo '<td class="bdr">'. $row['temperature'] . '</td>';
-            echo '<td class="bdr">'. $row['humidity'] . '</td>';
-            echo '<td class="bdr">'. $row['status_read_sensor_dht11'] . '</td>';
-            echo '<td class="bdr">'. $row['LED_01'] . '</td>';
-            echo '<td class="bdr">'. $row['LED_02'] . '</td>';
-            echo '<td class="bdr">'. $row['time'] . '</td>';
-            echo '<td>'. $dateFormat . '</td>';
+            echo '<td class="bdr">'. $row['activity'] . '</td>';
+            echo '<td class="bdr">'. $row['date'] . '/' . $row['time'] . '</td>';
             echo '</tr>';
           }
           Database::disconnect();
@@ -167,7 +151,7 @@
       </div>
       <select name="number_of_rows" id="number_of_rows">
         <option value="10">10</option>
-        <option value="25">25</option>
+        <option value="25">20</option>
         <option value="50">50</option>
         <option value="100">100</option>
       </select>

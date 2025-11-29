@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tapparelle</title>
+<style>
+
+    html {
+        font-family: Arial, sans-serif;
+        display: inline-block;
+        text-align: center;
+        /* CRITICAL CHANGE: Set a large, fixed base font size for small screens (mobile).
+           All 'rem' units will be calculated from this large base. */
+        font-size: 26px; 
+    }
+    
+    
+    body {
+        margin: 0;
+        padding: 10px;
+        font-size: 16px; 
+    }
+    
+    /* 3. Typography Adjustments (Now proportional to the base size) */
+    /* REM values remain the same, but they now calculate off a 26px mobile base. */
+    p {font-size: 1rem;} 
+    h3 {font-size: 2rem; margin: 0;}
+    .reading {font-size: 1.3rem;}
+    .packet {color: #bebebe; font-size: 0.5rem;} 
+
+    /* 4. Top Navigation */
+    .topnav {
+        overflow: hidden; 
+        background-color: #480c80ff; 
+        color: white; 
+        font-size: 3rem; 
+    }
+
+    /* 5. Content and Card Layout */
+    .content {
+        padding: 5px;
+    }
+    
+    .cards {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        /* Minmax width reduced to 100% on small screens */
+        grid-template-columns: repeat(auto-fit, minmax(100%, 1fr)); 
+        grid-gap: 15px;
+        padding: 0;
+    }
+
+
+    .card {
+        background-color: white; 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border: 2px solid #0c6980; 
+        border-radius: 15px;
+        padding: 15px;
+        text-align: center; 
+        margin-bottom: 5px; 
+    }
+    
+    .card-header {
+        background-color: #0c6980; 
+        color: white; 
+        border-radius: 15px;
+        padding: 10px;
+    }
+
+    /* 6. Switch and Item Layout */
+    .config-item {
+        display: flex;
+        flex-direction: column; 
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+    }
+
+    /* 7. Three-State Switch Styling */
+    .three-state-switch {
+        display: inline-flex;
+        border: 3px solid #ccc;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+    .three-state-switch input[type="radio"] { display: none; }
+    .three-state-switch label {
+        padding: 10px 15px; 
+        cursor: pointer;
+        background-color: #f0f0f0;
+        transition: background-color 0.3s;
+        white-space: nowrap; 
+        font-size: 3rem; /* Adjusted for readability on the 26px base */
+    }
+    .three-state-switch input[type="radio"]:checked + label {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    /* 8. Media Queries for Desktop Layout (Adjusted flex direction for PC) */
+    @media (min-width: 600px) {
+        .config-item {
+            flex-direction: row; 
+            text-align: left;
+        }
+
+        .three-state-switch {
+            margin: 0;
+        font-size: 1rem; /* Adjusted for readability on the 26px base */
+        }
+        
+        .card h3 {
+            text-align: left;
+        }
+    }
+</style>
+</head>
+<body>
+  <div class="topnav">
+    Tappa
+  </div>
+  <br>
+  <div id="config-list">
+    <p>Loading data...</p>
+  </div>
+  <br>
+  <div class="topnav">
+    <button onclick="window.open('recordtable.php', '_blank');">Open Record Table</button>
+  </div>
+<script>
+//------------------------------------------------------------
+  document.addEventListener('DOMContentLoaded', fetchConfigData);
+//------------------------------------------------------------
+  setInterval(myTimer, 5000);  
+//------------------------------------------------------------
+  function myTimer() {
+    Get_All("");
+  }
+  async function fetchConfigData() {
+    const listContainer = document.getElementById('config-list');
+    listContainer.innerHTML = ''; // Clear the "Loading" message
+    try {
+      // 1. Make the AJAX request to the PHP endpoint
+      const response = await fetch('get_config.php');
+      if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      // 2. Parse the JSON response
+      const dataArray = await response.json(); 
+      if (dataArray.length === 0) {
+          listContainer.innerHTML = '<p>No configuration records found.</p>';
+          return;
+      }
+      // 3. Iterate over the array and create list items with switches
+      dataArray.forEach((item, index) => {
+        // Create a unique ID suffix for inputs/labels in this row
+        const rowId = index + 1; 
+        // The actual board identifier is needed for the onclick function
+        const boardIdentifier = `${item.board}`; // e.g., ESP32_1, ESP32_2, etc.
+        // Create the container for the row
+        const rowDiv = document.createElement('div');
+        rowDiv.classList.add('card');
+        // --- Left Side: Data Display ---
+        const dataDisplay = document.createElement('h3');
+        dataDisplay.textContent = `${item.name}`;
+        // listItem.textContent = `name: ${item.name} | location: ${item.location}`;
+        rowDiv.appendChild(dataDisplay);
+        // --- Right Side: Three-State Switch Control ---
+        // Create the switch container
+        const switchDiv = document.createElement('div');
+        switchDiv.classList.add('three-state-switch');
+        // Helper function to create radio inputs and labels
+        function createRadioControl(value, labelText, isChecked) {
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.id = `pos_${value.toLowerCase()}${boardIdentifier}`; // unique ID: pos_down1, pos_down2, etc.
+          input.name = `position_${rowId}`; // unique NAME for mutual exclusion
+          input.value = value;
+          input.onclick = () => SetThreeState(boardIdentifier, value); // Pass board ID
+          if (isChecked) {
+              input.checked = true;
+          }
+          const label = document.createElement('label');
+          label.htmlFor = input.id;
+          label.textContent = labelText;
+          switchDiv.appendChild(input);
+          switchDiv.appendChild(label);
+        }
+        // Create DOWN control
+        createRadioControl('DOWN', 'DOWN', false);
+        // Create OFF control (set as default checked)
+        createRadioControl('OFF', 'O', true); 
+        // Create UP control
+        createRadioControl('UP', 'UP', false);
+        // Append the switch to the row
+        rowDiv.appendChild(switchDiv);
+        // Append the entire row to the main container
+        listContainer.appendChild(rowDiv);
+      });
+      Get_All("")
+    } catch (error) {
+      // Display error message
+      listContainer.innerHTML = `<p>Error loading data: ${error.message}</p>`;
+      console.error("Fetch error:", error);
+    }
+  }
+//------------------------------------------------------------
+function SetThreeState(boardId, state) {
+  console.log("SETTING: " ,boardId,"activity:", state);
+	if (window.XMLHttpRequest) {
+    // code for IE7+, Firefox, Chrome, Opera, Safari
+    xmlhttp = new XMLHttpRequest();
+    } else {
+      // code for IE6, IE5
+      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    // xmlhttp.onreadystatechange = function() {
+    //   if (this.readyState == 4 && this.status == 200) {
+    //      }
+    //   }
+    xmlhttp.open("POST","updatedata.php",true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("board="+boardId+"&activity="+state);
+  }
+//------------------------------------------------------------
+    function Get_All(board) {
+		  if (window.XMLHttpRequest) {
+          // code for IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp = new XMLHttpRequest();
+        } else {
+          // code for IE6, IE5
+          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xmlhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+             const myObj = JSON.parse(this.responseText);
+            myObj.forEach((item, index) => {
+              if (item.activity == "DOWN") {
+                document.getElementById("pos_down"+item.board).checked = true;
+              } 
+              if (item.activity == "UP") {
+                document.getElementById("pos_up"+item.board).checked = true;
+              } 
+              if(item.activity == "OFF" ){
+                document.getElementById("pos_off"+item.board).checked = true;
+              }
+          });
+         };
+		  }
+        console.log("getting ALL");
+        xmlhttp.open("POST","getall.php",true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xmlhttp.send("board=");
+    }
+
+
+</script>
+</body>
+</html>

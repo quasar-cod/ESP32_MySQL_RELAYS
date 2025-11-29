@@ -5,23 +5,28 @@
 #define ADDR  "esp32_relays" 
 WiFiServer server(80);
 
-#define ON_Board_LED 2
 //valori per scheda relè esterna
-//NB ha la logica invertita
+// #define ON_Board_LED 2
+//NB il relè ha la logica invertita
 // #define RELE_01 26 
 // #define RELE_02 27 
+
 //valori per scheda relè a 220V
+// #define ON_Board_LED 23
 #define RELE_01 16 
 #define RELE_02 17 
 
 const char* ssid = "TIM-39751438_EXT";
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
-String postData = ""; //--> Variables sent for HTTP POST request data.
 String payload = "";  //--> Variable for receiving response from HTTP POST.
+String postData = "board=ESP32_02"; //--> Variables sent for HTTP POST request data.
 
 void setup() {
   Serial.begin(115200); //--> Initialize serial communications with the PC.
-  pinMode(ON_Board_LED,OUTPUT); //--> On Board LED port Direction output.
+  Serial.println();
+  Serial.println("-------------");
+  Serial.println("Initialized serial communications with the PC.");
+  // pinMode(ON_Board_LED,OUTPUT); //--> On Board LED port Direction output.
   pinMode(RELE_01,OUTPUT); //--> RELE_01 port Direction output.
   pinMode(RELE_02,OUTPUT); //--> RELE_02 port Direction output.
   digitalWrite(RELE_01, LOW); //--> Turn off Led RELE_01.
@@ -29,17 +34,14 @@ void setup() {
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-
-  Serial.println();
-  Serial.println("-------------");
-  Serial.println("Connecting");
+ 
   int connecting_process_timed_out = 20; // 10 seconds.
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
-    digitalWrite(ON_Board_LED, HIGH);
+    // digitalWrite(ON_Board_LED, HIGH);
     Serial.println("Connecting");
     delay(250);
-    digitalWrite(ON_Board_LED, LOW);
+    // digitalWrite(ON_Board_LED, LOW);
     delay(250);
     //Countdown "connecting_process_timed_out".
     if(connecting_process_timed_out > 0) connecting_process_timed_out--;
@@ -59,28 +61,25 @@ void setup() {
   if (MDNS.begin(ADDR)) {
     Serial.println("Abilitato");
   }
-  delay(1000);
-  if(WiFi.status()== WL_CONNECTED) {
-    Serial.println("Connesso");
-  }
-  server.begin();
+//////////////////////////////////////////////////////////////////////
   while(WiFi.status()== WL_CONNECTED) {
-    delay(1000);
     HTTPClient http;  //--> Declare object of class HTTPClient.
     int httpCode;     //--> Variables for HTTP return code.
-    postData = "board=ESP32_01";
+
     payload = "";
+    // digitalWrite(ON_Board_LED, HIGH);
+    // http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
     http.begin("http://hp-i3/tappa/getdata.php");  //--> Specify request destination
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
     httpCode = http.POST(postData); //--> Send the request
     payload = http.getString();     //--> Get the response payload
-    http.end();  //--> Close connection
-    Serial.println("---------------");
+    // Serial.println("---------------");
     Serial.println("getdata");  
-    Serial.print("httpCode : ");
-    Serial.println(httpCode); //--> Print HTTP return code
-    Serial.print("payload  : ");
-    Serial.println(payload);  //--> Print request response payload
+    // Serial.print("httpCode : ");
+    // Serial.println(httpCode); //--> Print HTTP return code
+    // Serial.print("payload  : ");
+    // Serial.println(payload);  //--> Print request response payload
+    http.end();  //--> Close connection
     JSONVar myObject = JSON.parse(payload);
     if (JSON.typeof(myObject) != "undefined") {
       if(strcmp(myObject["activity"], "OFF") == 0 )
@@ -89,7 +88,7 @@ void setup() {
         Serial.println("SPEGNIMENTO");
       }
       if(strcmp(myObject["activity"], "UP") == 0 )
-      {
+        {
         digitalWrite(RELE_02, LOW);
         delay(100);//aspetto per evitare inerzia motore in caso di inversione
         digitalWrite(RELE_01, HIGH); 
@@ -101,16 +100,21 @@ void setup() {
         delay(100);//aspetto per evitare inerzia motore in caso di inversione
         digitalWrite(RELE_02, HIGH); 
         Serial.println("CHIUSURA");
-      }
-    }  
+        }
+    }
   }
+  Serial.println("Parsing input failed!");
+  delay(1000);
+  ESP.restart();
+// //////////////////////////////////////////////////////////////////////
+
 }
 
 void loop() {
   if(WiFi.status()== WL_CONNECTED) {
     HTTPClient http;  //--> Declare object of class HTTPClient.
     int httpCode;     //--> Variables for HTTP return code.
-    postData = "board=ESP32_01";
+
     payload = "";
     // digitalWrite(ON_Board_LED, HIGH);
     // http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
@@ -145,11 +149,12 @@ void loop() {
         delay(100);//aspetto per evitare inerzia motore in caso di inversione
         digitalWrite(RELE_02, HIGH); 
         Serial.println("CHIUSURA");
+        }
       }
-    }else
-      {Serial.println("Parsing input failed!");
+    else {
+      Serial.println("Parsing input failed!");
       delay(1000);
-      // ESP.restart();
+      ESP.restart();
       }
     // digitalWrite(ON_Board_LED, LOW);
     delay(1000);

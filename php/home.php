@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
   <head>
-    <title>ESP32 WITH MYSQL DATABASE</title>
+    <title>tappa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
     <link rel="icon" href="data:,">
@@ -71,11 +71,11 @@
           </div>            
           <h3 style="font-size: 0.7rem;"><span id="ESP32_01_LTRD"></span></h3>
           <div class="three-state-switch">
-            <input type="radio" id="pos_down1" name="position" value="DOWN" onclick="SetThreeState('ESP32_01','DOWN')">
+            <input type="radio" id="pos_down1" name="position1" value="DOWN" onclick="SetThreeState('ESP32_01','DOWN')">
             <label for="pos_down1">DOWN</label>
-            <input type="radio" id="pos_off1" name="position" value="O" onclick="SetThreeState('ESP32_01','OFF')" checked>
+            <input type="radio" id="pos_off1" name="position1" value="O" onclick="SetThreeState('ESP32_01','OFF')" checked>
             <label for="pos_off1">O</label>
-            <input type="radio" id="pos_up1" name="position" value="UP" onclick="SetThreeState('ESP32_01','UP')">
+            <input type="radio" id="pos_up1" name="position1" value="UP" onclick="SetThreeState('ESP32_01','UP')">
             <label for="pos_up1">UP</label>
           </div>
         </div>
@@ -86,11 +86,11 @@
           </div>            
           <h3 style="font-size: 0.7rem;"><span id="ESP32_02_LTRD"></span></h3>
           <div class="three-state-switch">
-            <input type="radio" id="pos_down2" name="position" value="DOWN" onclick="SetThreeState('ESP32_02','DOWN')">
+            <input type="radio" id="pos_down2" name="position2" value="DOWN" onclick="SetThreeState('ESP32_02','DOWN')">
             <label for="pos_down2">DOWN</label>
-            <input type="radio" id="pos_off2" name="position" value="O" onclick="SetThreeState('ESP32_02','OFF')" checked>
+            <input type="radio" id="pos_off2" name="position2" value="O" onclick="SetThreeState('ESP32_02','OFF')" checked>
             <label for="pos_off2">O</label>
-            <input type="radio" id="pos_up2" name="position" value="UP" onclick="SetThreeState('ESP32_02','UP')">
+            <input type="radio" id="pos_up2" name="position2" value="UP" onclick="SetThreeState('ESP32_02','UP')">
             <label for="pos_up2">UP</label>
           </div>
         </div>
@@ -108,12 +108,13 @@
     </div>
 <!-- ___________________________________________________________________________________________________________________________________ -->
     <script>
+    Get_Config("ESP32_01");
     Get_Data("ESP32_01");
     Get_Data("ESP32_02");
-    setInterval(myTimer, 5000);     
+    setInterval(myTimer, 20000);     
 //------------------------------------------------------------
-      function SetThreeState(board,state) {
-        console.log("setting board: " ,board,"New State:", state);
+      function SetThreeState(board,activity) {
+        console.log("SETTING board: " ,board,"New State:", activity);
 				if (window.XMLHttpRequest) {
           // code for IE7+, Firefox, Chrome, Opera, Safari
           xmlhttp = new XMLHttpRequest();
@@ -127,8 +128,9 @@
         }
         xmlhttp.open("POST","updatedata.php",true);
         xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        xmlhttp.send("board="+board+"&state="+state);
-}//------------------------------------------------------------
+        xmlhttp.send("board="+board+"&activity="+activity);
+      }
+//------------------------------------------------------------
       function myTimer() {
         Get_Data("ESP32_01");
         Get_Data("ESP32_02");
@@ -149,10 +151,24 @@
               document.getElementById("ESP32_01_LTRD").innerHTML = "Last Date: " + myObj.ls_date + " Time: " + myObj.ls_time ;
               if (myObj.activity == "DOWN") {
                 document.getElementById("pos_down1").checked = true;
-              } elseif (myObj.activity == "UP") {
+              } 
+              if (myObj.activity == "UP") {
                 document.getElementById("pos_up1").checked = true;
-              } elseif(myObj.activity == "OFF" ){
+              } 
+              if(myObj.activity == "OFF" ){
                 document.getElementById("pos_off1").checked = true;
+              }
+            }
+            if (myObj.board == "ESP32_02") {
+              document.getElementById("ESP32_02_LTRD").innerHTML = "Last Date: " + myObj.ls_date + " Time: " + myObj.ls_time ;
+              if (myObj.activity == "DOWN") {
+                document.getElementById("pos_down2").checked = true;
+              } 
+              if (myObj.activity == "UP") {
+                document.getElementById("pos_up2").checked = true;
+              } 
+              if(myObj.activity == "OFF" ){
+                document.getElementById("pos_off2").checked = true;
               }
             }
           }
@@ -162,6 +178,19 @@
         xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xmlhttp.send("board="+board);
 			}
+
+      function Get_Config(board) {
+				if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp = new XMLHttpRequest();
+        } else {// code for IE6, IE5
+          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        
+        console.log("getting config");
+        xmlhttp.open("POST","getconfig.php",true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	      xmlhttp.send("board="+board);
+        }
     </script>
   </body>
 </html>
