@@ -134,26 +134,92 @@
 //------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', fetchConfigData);
 //------------------------------------------------------------
-  setInterval(myTimer, 5000);  
+  setInterval(myTimer, 10000);  
 //------------------------------------------------------------
   function myTimer() {
     Get_All("");
   }
+//------------------------------------------------------------
+  function Get_All(board) {
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    console.log("getting ALL");
+    xmlhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        const now = Date.now();
+        // console.log(now);
+        const myObj = JSON.parse(this.responseText);
+        myObj.forEach((item, index) => {
+          const fullDateTimeString = item.date + 'T' + item.time; 
+          const itemTimestamp = new Date(fullDateTimeString).getTime();          
+          // console.log(item.board + " " + now + " " + itemTimestamp + " " + item.activity); 
+          // console.log(now - itemTimestamp);
+          if (now - itemTimestamp > "30000" && item.activity != "OFF") {
+            SetThreeState(item.board, "OFF");
+            document.getElementById("pos_up"+item.board).checked = false;
+            document.getElementById("pos_down"+item.board).checked = false;
+            document.getElementById("pos_off"+item.board).checked = true;
+            console.log("spegnimento");
+          }
+          else  
+          {
+            if (item.activity == "DOWN") {
+              document.getElementById("pos_down"+item.board).checked = true;
+            } 
+            if (item.activity == "UP") {
+              document.getElementById("pos_up"+item.board).checked = true;
+            } 
+            if(item.activity == "OFF" ){
+              document.getElementById("pos_off"+item.board).checked = true;
+            }
+          }
+        });
+      };
+    }
+    xmlhttp.open("POST","getall.php",true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("board=");
+  }
+//------------------------------------------------------------
+  function SetThreeState(boardId, state) {
+    console.log("SETTING: " ,boardId,"activity:", state);
+    if (window.XMLHttpRequest) {
+      // code for IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    // xmlhttp.onreadystatechange = function() {
+    //   if (this.readyState == 4 && this.status == 200) {
+    //      }
+    //   }
+    xmlhttp.open("POST","updatedata.php",true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("board="+boardId+"&activity="+state);
+  }
+//------------------------------------------------------------
   async function fetchConfigData() {
     const listContainer = document.getElementById('config-list');
     listContainer.innerHTML = ''; // Clear the "Loading" message
     try {
       // 1. Make the AJAX request to the PHP endpoint
-      const response = await fetch('get_config.php');
+      const response = await fetch('getconfig.php');
       if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       // 2. Parse the JSON response
       const dataArray = await response.json(); 
       if (dataArray.length === 0) {
-          listContainer.innerHTML = '<p>No configuration records found.</p>';
-          return;
+        listContainer.innerHTML = '<p>No configuration records found.</p>';
+        return;
       }
+      console.log("geting config");
       // 3. Iterate over the array and create list items with switches
       dataArray.forEach((item, index) => {
         // Create a unique ID suffix for inputs/labels in this row
@@ -166,7 +232,6 @@
         // --- Left Side: Data Display ---
         const dataDisplay = document.createElement('h3');
         dataDisplay.textContent = `${item.name}`;
-        // listItem.textContent = `name: ${item.name} | location: ${item.location}`;
         rowDiv.appendChild(dataDisplay);
         // --- Right Side: Three-State Switch Control ---
         // Create the switch container
@@ -181,7 +246,7 @@
           input.value = value;
           input.onclick = () => SetThreeState(boardIdentifier, value); // Pass board ID
           if (isChecked) {
-              input.checked = true;
+            input.checked = true;
           }
           const label = document.createElement('label');
           label.htmlFor = input.id;
@@ -207,56 +272,6 @@
       console.error("Fetch error:", error);
     }
   }
-//------------------------------------------------------------
-function SetThreeState(boardId, state) {
-  console.log("SETTING: " ,boardId,"activity:", state);
-	if (window.XMLHttpRequest) {
-    // code for IE7+, Firefox, Chrome, Opera, Safari
-    xmlhttp = new XMLHttpRequest();
-    } else {
-      // code for IE6, IE5
-      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    // xmlhttp.onreadystatechange = function() {
-    //   if (this.readyState == 4 && this.status == 200) {
-    //      }
-    //   }
-    xmlhttp.open("POST","updatedata.php",true);
-    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    xmlhttp.send("board="+boardId+"&activity="+state);
-  }
-//------------------------------------------------------------
-    function Get_All(board) {
-		  if (window.XMLHttpRequest) {
-          // code for IE7+, Firefox, Chrome, Opera, Safari
-          xmlhttp = new XMLHttpRequest();
-        } else {
-          // code for IE6, IE5
-          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-             const myObj = JSON.parse(this.responseText);
-            myObj.forEach((item, index) => {
-              if (item.activity == "DOWN") {
-                document.getElementById("pos_down"+item.board).checked = true;
-              } 
-              if (item.activity == "UP") {
-                document.getElementById("pos_up"+item.board).checked = true;
-              } 
-              if(item.activity == "OFF" ){
-                document.getElementById("pos_off"+item.board).checked = true;
-              }
-          });
-         };
-		  }
-        console.log("getting ALL");
-        xmlhttp.open("POST","getall.php",true);
-        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        xmlhttp.send("board=");
-    }
-
-
 </script>
 </body>
 </html>
