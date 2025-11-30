@@ -134,7 +134,7 @@
 //------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', fetchConfigData);
 //------------------------------------------------------------
-  setInterval(myTimer, 10000);  
+  setInterval(myTimer, 5000);  
 //------------------------------------------------------------
   function myTimer() {
     Get_All("");
