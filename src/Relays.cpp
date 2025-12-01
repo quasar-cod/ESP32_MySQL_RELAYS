@@ -4,7 +4,7 @@
 #include <ESPmDNS.h>
 #define ADDR  "esp32_relays" 
 WiFiServer server(80);
-
+String board="ESP32_01";
 //valori per scheda relè esterna
 // #define ON_Board_LED 2
 // #define RELE_01 26 
@@ -17,7 +17,7 @@ WiFiServer server(80);
 #define RELE_02 17 
 
 // const char* ssid = "TIM-39751438";
-const char* ssid = "TIM-39751438_EXT";
+const char* ssid = "TIM-39751438";
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
 String payload = "";  //--> Variable for receiving response from HTTP POST.
 String postData = "";
@@ -77,7 +77,8 @@ void loop() {
     HTTPClient http;  //--> Declare object of class HTTPClient.
     int httpCode;     //--> Variables for HTTP return code.
     payload = "";
-    postData = "board=ESP32_02"; //--> Variables sent for HTTP POST request data.
+    postData = "board="; //--> Variables sent for HTTP POST request data.
+    postData += board; //--> Variables sent for HTTP POST request data.
     // http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
     http.begin("http://hp-i3/tappa/getdata.php");  //--> Specify request destination
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
@@ -134,7 +135,8 @@ void loop() {
         HTTPClient http;  //--> Declare object of class HTTPClient.
         int httpCode;     //--> Variables for HTTP return code.
         payload = "";
-        postData = "board=ESP32_02"; //--> Variables sent for HTTP POST request data.
+        postData = "board="; //--> Variables sent for HTTP POST request data.
+        postData += board; //--> Variables sent for HTTP POST request data.
         postData +="&activity=OFF";
         // http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
         http.begin("http://hp-i3/tappa/updatedata.php");  //--> Specify request destination

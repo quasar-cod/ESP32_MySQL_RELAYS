@@ -152,7 +152,7 @@
     xmlhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
         const now = Date.now();
-        // console.log(now);
+        // console.log(now); 
         const myObj = JSON.parse(this.responseText);
         myObj.forEach((item, index) => {
           const fullDateTimeString = item.date + 'T' + item.time; 
@@ -160,10 +160,10 @@
           console.log(item.board + " " + now + " " + itemTimestamp + " " + item.activity); 
           console.log(now - itemTimestamp);
           if (now - itemTimestamp > "40000" && item.activity != "OFF") {
-            // SetThreeState(item.board, "OFF");
-            // document.getElementById("pos_up"+item.board).checked = false;
-            // document.getElementById("pos_down"+item.board).checked = false;
-            // document.getElementById("pos_off"+item.board).checked = true;
+            SetThreeState(item.board, "OFF");
+            document.getElementById("pos_up"+item.board).checked = false;
+            document.getElementById("pos_down"+item.board).checked = false;
+            document.getElementById("pos_off"+item.board).checked = true;
             console.log("spegnimento");
           }
           else  
