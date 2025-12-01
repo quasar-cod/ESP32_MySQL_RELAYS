@@ -134,7 +134,7 @@
 //------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', fetchConfigData);
 //------------------------------------------------------------
-  setInterval(myTimer, 5000);  
+  setInterval(myTimer, 2000);  
 //------------------------------------------------------------
   function myTimer() {
     Get_All("");
@@ -157,13 +157,13 @@
         myObj.forEach((item, index) => {
           const fullDateTimeString = item.date + 'T' + item.time; 
           const itemTimestamp = new Date(fullDateTimeString).getTime();          
-          // console.log(item.board + " " + now + " " + itemTimestamp + " " + item.activity); 
-          // console.log(now - itemTimestamp);
-          if (now - itemTimestamp > "30000" && item.activity != "OFF") {
-            SetThreeState(item.board, "OFF");
-            document.getElementById("pos_up"+item.board).checked = false;
-            document.getElementById("pos_down"+item.board).checked = false;
-            document.getElementById("pos_off"+item.board).checked = true;
+          console.log(item.board + " " + now + " " + itemTimestamp + " " + item.activity); 
+          console.log(now - itemTimestamp);
+          if (now - itemTimestamp > "40000" && item.activity != "OFF") {
+            // SetThreeState(item.board, "OFF");
+            // document.getElementById("pos_up"+item.board).checked = false;
+            // document.getElementById("pos_down"+item.board).checked = false;
+            // document.getElementById("pos_off"+item.board).checked = true;
             console.log("spegnimento");
           }
           else  
