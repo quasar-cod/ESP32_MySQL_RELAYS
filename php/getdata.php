@@ -5,20 +5,19 @@
     $board = $_POST['board'];
     $myObj = (object)array();
     $pdo = Database::connect();
-    $sql = 'SELECT * FROM esp32_activity WHERE board="' . $board . '" order by date desc, time desc limit 1';
-    // foreach ($pdo->query($sql) as $row) {
+    $sql = 'SELECT a.*,c.SSID FROM esp32_activity a inner join esp32_config c on a.board=c.board WHERE c.board="' . $board . '" order by date desc, time desc limit 1';
 
     $q = $pdo->prepare($sql);
     $q->execute();
     $row = $q->fetch();
     $myObj->board = $row['board'];
     $myObj->activity = $row['activity'];
+    $myObj->SSID = $row['SSID'];
     $myObj->ls_time = $row['time'];
     $myObj->ls_date = $row['date'];
     $myJSON = json_encode($myObj);
     echo $myJSON;
     // echo $sql;
-
     Database::disconnect();
   }
 ?>
