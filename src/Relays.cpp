@@ -17,6 +17,11 @@
 #define RELE_02 17 
 
 String board="ESP32_02";
+// String site="http://hp-i3/tappa/";
+// http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
+// http.begin("http://hp-i3-ok/tappa/getdata.php");  //--> Specify request destination
+const char* site = "http://hp-i3-ok/tappa/";
+char destination[255];
 // const char* ssid = "TIM-39751438";
 const char* ssid = "TIM-39751438_EXT";
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
@@ -27,10 +32,55 @@ int httpCode;     //--> Variables for HTTP return code.
 int connecting_process_timed_out = 40; // 20 sec
 const char* activity = nullptr;
 const char* gssid = nullptr; 
+const char* gsite = nullptr; 
+JsonDocument doc; 
 
-int tempo =0;
-int delta =0;
-String status="OFF";
+int tempo;
+int delta;
+String status;
+
+void updatedata(){
+  payload = "";
+  postData = "board="; //--> Variables sent for HTTP POST request data.
+  postData += board; //--> Variables sent for HTTP POST request data.
+  postData +="&activity=OFF";
+  Serial.println("---------------");
+  Serial.println("updatedata");  
+  Serial.println(postData);
+  strcpy(destination ,site);
+  strcat(destination ,"updatedata.php");
+  Serial.println(destination);
+  http.begin(destination);  //--> Specify request destination
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
+  httpCode = http.POST(postData); //--> Send the request
+  payload = http.getString();     //--> Get the response payload
+  Serial.print("httpCode : ");
+  Serial.println(httpCode); //--> Print HTTP return code
+  Serial.print("payload  : ");
+  Serial.println(payload);  //--> Print request response payload
+  http.end();  //--> Close connection
+}
+
+void getdata(){
+  payload = "";
+  postData = "board="; //--> Variables sent for HTTP POST request data.
+  postData += board; //--> Variables sent for HTTP POST request data.
+  Serial.println("---------------");
+  Serial.println("getdata");
+  Serial.println(postData);
+  strcpy(destination ,site);
+  strcat(destination ,"getdata.php");
+  Serial.println(destination);
+  http.begin(destination);  //--> Specify request destination
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
+  httpCode = http.POST(postData); //--> Send the request
+  payload = http.getString();     //--> Get the response payload
+  Serial.print("httpCode : ");
+  Serial.println(httpCode); //--> Print HTTP return code
+  Serial.print("payload  : ");
+  Serial.println(payload);  //--> Print request response payload
+  http.end();  //--> Close connection
+}
 
 void config(){
   connecting_process_timed_out = 10;
@@ -66,24 +116,56 @@ void config(){
   if (MDNS.begin(ADDR)) {
     Serial.println("Abilitato");
   }
-  JsonDocument doc; 
+  payload = "";
+  postData = "board="; //--> Variables sent for HTTP POST request data.
+  postData += board; //--> Variables sent for HTTP POST request data.
+  strcat(destination ,site);
+  strcat(destination ,"getdata.php");
+  Serial.println("---------------");
+  Serial.println(destination);
+
+  http.begin(destination);  //--> Specify request destination
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
+  httpCode = http.POST(postData); //--> Send the request
+  payload = http.getString();     //--> Get the response payload
+  Serial.print("httpCode : ");
+  Serial.println(httpCode); //--> Print HTTP return code
+  Serial.print("payload  : ");
+  Serial.println(payload);  //--> Print request response payload
+  http.end();  //--> Close connection
   DeserializationError error = deserializeJson(doc, payload);
   if (error) {
     Serial.print(F("Failed to parse JSON: "));
     Serial.println(error.f_str());
   } else  {
+    gsite = doc["site"];
+    Serial.print("gssid ");
+    Serial.println(gsite);
+    Serial.print("site ");
+    Serial.println(site);
+    if(strcmp(gsite, site) != 0 & strcmp(gsite, "") != 0){
+      Serial.println("***********************************************");
+      Serial.println("cambio SSID");
+      Serial.println("***********************************************");
+      ssid=gssid;
+    } else  {
+      Serial.println("***********************************************");
+      Serial.println("SSID CONFERMATO");
+      Serial.println("***********************************************");
+    } 
     gssid = doc["SSID"];
     Serial.print("gssid ");
     Serial.println(gssid);
     Serial.print("SSID ");
     Serial.println(ssid);
-    if(strcmp(gssid, ssid) != 0 && status=="OFF"){
+    if(strcmp(gssid, ssid) != 0 & strcmp(gssid, "") != 0){
       Serial.println("***********************************************");
-      Serial.println("RICOLLEGAMENTO");
+      Serial.println("cambio SSID");
       Serial.println("***********************************************");
+      ssid=gssid;
     } else  {
       Serial.println("***********************************************");
-      Serial.println("COLLEGAMENTO CONFERMATO");
+      Serial.println("SSID CONFERMATO");
       Serial.println("***********************************************");
     } 
   }
@@ -149,43 +231,7 @@ void setup() {
   delta=0;
 }
 
-void updatedata(){
-  payload = "";
-  postData = "board="; //--> Variables sent for HTTP POST request data.
-  postData += board; //--> Variables sent for HTTP POST request data.
-  postData +="&activity=OFF";
-  // http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
-  http.begin("http://hp-i3-ok/tappa/updatedata.php");  //--> Specify request destination
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
-  httpCode = http.POST(postData); //--> Send the request
-  payload = http.getString();     //--> Get the response payload
-  Serial.println("---------------");
-  Serial.println("updatedata");  
-  Serial.print("httpCode : ");
-  Serial.println(httpCode); //--> Print HTTP return code
-  Serial.print("payload  : ");
-  Serial.println(payload);  //--> Print request response payload
-  http.end();  //--> Close connection
-}
-
-void getdata(){
-  payload = "";
-  postData = "board="; //--> Variables sent for HTTP POST request data.
-  postData += board; //--> Variables sent for HTTP POST request data.
-  // http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
-  http.begin("http://hp-i3-ok/tappa/getdata.php");  //--> Specify request destination
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
-  httpCode = http.POST(postData); //--> Send the request
-  payload = http.getString();     //--> Get the response payload
-  Serial.println("---------------");
-  Serial.println("getdata");
-  Serial.print("httpCode : ");
-  Serial.println(httpCode); //--> Print HTTP return code
-  Serial.print("payload  : ");
-  Serial.println(payload);  //--> Print request response payload
-  http.end();  //--> Close connection
-
-  JsonDocument doc; 
+void relays(){
   DeserializationError error = deserializeJson(doc, payload);
   if (error) {
     Serial.print(F("Failed to parse JSON: "));
@@ -246,6 +292,7 @@ void loop() {
     digitalWrite(ON_Board_LED,LOW);
     delay(2000);
     getdata();//mettendo un delay dopo la wait getdata fallisce con minore frequnza (?)
+    relays();
     Serial.print("status ");
     Serial.println(status);
     Serial.print("tempo ");
@@ -253,5 +300,8 @@ void loop() {
     Serial.print("delta ");
     Serial.println(delta);
   }
-  else connect();
+  else{ 
+    config();
+    connect();
+  }
 }
