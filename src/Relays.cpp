@@ -1,10 +1,8 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-// #include <Arduino_JSON.h>
 #include <ArduinoJSON.h>
 #include <ESPmDNS.h>
 #define ADDR  "tappa" 
-// WiFiServer server(80);
 //valori per scheda relè esterna
 // #define ON_Board_LED 2
 // #define RELE_01 26 
@@ -16,20 +14,20 @@
 #define RELE_01 16 
 #define RELE_02 17 
 
-String board="ESP32_02";
-// String site="http://hp-i3/tappa/";
-// http.begin("http://dannaviaggi.altervista.org/getdata.php");  //--> Specify request destination
-// http.begin("http://hp-i3-ok/tappa/getdata.php");  //--> Specify request destination
+String board="ESP32_01";
+// const char* site = "http://dannaviaggi.altervista.org/";
+// const char* site = "http://hp-i3/tappa/";
 const char* site = "http://hp-i3-ok/tappa/";
 char destination[255];
 // const char* ssid = "TIM-39751438";
+// const char* ssid = "TIM-39751438-MINI";
 const char* ssid = "TIM-39751438_EXT";
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
-String payload = "";  //--> Variable for receiving response from HTTP POST.
+String payload = "";
 String postData = "";
 HTTPClient http;  //--> Declare object of class HTTPClient.
 int httpCode;     //--> Variables for HTTP return code.
-int connecting_process_timed_out = 40; // 20 sec
+int connecting_process_timed_out;
 const char* activity = nullptr;
 const char* gssid = nullptr; 
 const char* gsite = nullptr; 
@@ -39,53 +37,12 @@ int tempo;
 int delta;
 String status;
 
-void updatedata(){
-  payload = "";
-  postData = "board="; //--> Variables sent for HTTP POST request data.
-  postData += board; //--> Variables sent for HTTP POST request data.
-  postData +="&activity=OFF";
-  Serial.println("---------------");
-  Serial.println("updatedata");  
-  Serial.println(postData);
-  strcpy(destination ,site);
-  strcat(destination ,"updatedata.php");
-  Serial.println(destination);
-  http.begin(destination);  //--> Specify request destination
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
-  httpCode = http.POST(postData); //--> Send the request
-  payload = http.getString();     //--> Get the response payload
-  Serial.print("httpCode : ");
-  Serial.println(httpCode); //--> Print HTTP return code
-  Serial.print("payload  : ");
-  Serial.println(payload);  //--> Print request response payload
-  http.end();  //--> Close connection
-}
-
-void getdata(){
-  payload = "";
-  postData = "board="; //--> Variables sent for HTTP POST request data.
-  postData += board; //--> Variables sent for HTTP POST request data.
-  Serial.println("---------------");
-  Serial.println("getdata");
-  Serial.println(postData);
-  strcpy(destination ,site);
-  strcat(destination ,"getdata.php");
-  Serial.println(destination);
-  http.begin(destination);  //--> Specify request destination
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
-  httpCode = http.POST(postData); //--> Send the request
-  payload = http.getString();     //--> Get the response payload
-  Serial.print("httpCode : ");
-  Serial.println(httpCode); //--> Print HTTP return code
-  Serial.print("payload  : ");
-  Serial.println(payload);  //--> Print request response payload
-  http.end();  //--> Close connection
-}
 
 void config(){
   connecting_process_timed_out = 10;
   WiFi.mode(WIFI_STA);
   WiFi.begin("Redmi14c","manu1234");
+//NB se uso il cellulare non posso partire da una pagina nella rete locale perchè non è esposta su internet 
   Serial.println("\n***********************************************");
   Serial.println("Connecting to MASTER");
   Serial.println("***********************************************");
@@ -172,7 +129,7 @@ void config(){
 }
 
 void connect(){
-  connecting_process_timed_out = 100;
+  connecting_process_timed_out = 400;
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid,password);
   Serial.println("***********************************************");
@@ -229,6 +186,49 @@ void setup() {
   status="OFF";
   tempo=0;
   delta=0;
+}
+
+void updatedata(){
+  payload = "";
+  postData = "board="; //--> Variables sent for HTTP POST request data.
+  postData += board; //--> Variables sent for HTTP POST request data.
+  postData +="&activity=OFF";
+  Serial.println("---------------");
+  Serial.println("updatedata");  
+  Serial.println(postData);
+  strcpy(destination ,site);
+  strcat(destination ,"updatedata.php");
+  Serial.println(destination);
+  http.begin(destination);  //--> Specify request destination
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
+  httpCode = http.POST(postData); //--> Send the request
+  payload = http.getString();     //--> Get the response payload
+  Serial.print("httpCode : ");
+  Serial.println(httpCode); //--> Print HTTP return code
+  Serial.print("payload  : ");
+  Serial.println(payload);  //--> Print request response payload
+  http.end();  //--> Close connection
+}
+
+void getdata(){
+  payload = "";
+  postData = "board="; //--> Variables sent for HTTP POST request data.
+  postData += board; //--> Variables sent for HTTP POST request data.
+  Serial.println("---------------");
+  Serial.println("getdata");
+  Serial.println(postData);
+  strcpy(destination ,site);
+  strcat(destination ,"getdata.php");
+  Serial.println(destination);
+  http.begin(destination);  //--> Specify request destination
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
+  httpCode = http.POST(postData); //--> Send the request
+  payload = http.getString();     //--> Get the response payload
+  Serial.print("httpCode : ");
+  Serial.println(httpCode); //--> Print HTTP return code
+  Serial.print("payload  : ");
+  Serial.println(payload);  //--> Print request response payload
+  http.end();  //--> Close connection
 }
 
 void relays(){
