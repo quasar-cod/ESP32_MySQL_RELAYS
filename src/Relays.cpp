@@ -14,19 +14,19 @@
 #define RELE_01 16 
 #define RELE_02 17 
 
-String board="ESP32_01";
+String board="ESP32_03";
 // const char* site = "http://dannaviaggi.altervista.org/";
 // const char* site = "http://hp-i3/tappa/";
 const char* site = "http://hp-i3-ok/tappa/";
 char destination[255];
-// const char* ssid = "TIM-39751438";
+const char* ssid = "TIM-39751438";
 // const char* ssid = "TIM-39751438-MINI";
-const char* ssid = "TIM-39751438_EXT";
+// const char* ssid = "TIM-39751438_EXT";
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
 String payload = "";
 String postData = "";
-HTTPClient http;  //--> Declare object of class HTTPClient.
-int httpCode;     //--> Variables for HTTP return code.
+HTTPClient http;
+int httpCode;
 int connecting_process_timed_out;
 const char* activity = nullptr;
 const char* gssid = nullptr; 
@@ -36,7 +36,179 @@ JsonDocument doc;
 int tempo;
 int delta;
 String status;
+int pt = 1;
+#include <time.h>                   // for time() ctime()
+#define MY_NTP_SERVER "it.pool.ntp.org"           
+#define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
+time_t now;                         // this are the seconds since Epoch (1970) - UTC
+tm tmn;                              // the structure tm holds time information in a more convenient way
+const char* time_on;
+const char* time_off;
 
+String dateYMD(){
+  time(&now);
+  localtime_r(&now, &tmn);
+  String a = String(tmn.tm_year + 1900);
+  String m = "00" + String(tmn.tm_mon);
+  String mm = m.substring(m.length()-2);
+  String g = "00" + String(tmn.tm_mday);
+  String gg = g.substring(g.length()-2);
+  String amg = a + ":" + mm + ":" + gg;
+  return(amg);
+}
+String timeHMS(){
+  time(&now);
+  localtime_r(&now, &tmn);
+  String h = "00" + String(tmn.tm_hour);
+  String hh = h.substring(h.length()-2);
+  String m = "00" + String(tmn.tm_min);
+  String mm = m.substring(m.length()-2);
+  String s = "00" + String(tmn.tm_sec);
+  String ss = s.substring(s.length()-2);
+  String hms = hh + ":" + mm + ":" + ss;
+  return(hms);
+}
+String timeHM(){
+  time(&now);
+  localtime_r(&now, &tmn);
+  String h = "00" + String(tmn.tm_hour);
+  String hh = h.substring(h.length()-2);
+  String m = "00" + String(tmn.tm_min);
+  String mm = m.substring(m.length()-2);
+  String hms = hh + ":" + mm + ":00";
+  return(hms);
+}
+String timeS(){
+  time(&now);
+  localtime_r(&now, &tmn);
+  String s = "00" + String(tmn.tm_sec);
+  String ss = s.substring(s.length()-2);
+  return(ss);
+}
+
+void updatedata(){
+  payload = "";
+  postData = "board=";
+  postData += board;
+  postData +="&activity=OFF";
+  Serial.println("---------------");
+  Serial.println("updatedata");  
+  Serial.println(postData);
+  strcpy(destination ,site);
+  strcat(destination ,"updatedata.php");
+  Serial.println(destination);
+  http.begin(destination);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded"); 
+  httpCode = http.POST(postData);
+  payload = http.getString();
+  Serial.print("httpCode : ");
+  Serial.println(httpCode);
+  Serial.print("payload  : ");
+  Serial.println(payload);
+  http.end();
+}
+
+void getdata(){
+  payload = "";
+  postData = "board=";
+  postData += board;
+  Serial.println("---------------");
+  Serial.println("getdata");
+  Serial.println(postData);
+  strcpy(destination ,site);
+  strcat(destination ,"getdata.php");
+  Serial.println(destination);
+  http.begin(destination);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  httpCode = http.POST(postData);
+  payload = http.getString();
+  Serial.print("httpCode : ");
+  Serial.println(httpCode);
+  Serial.print("payload  : ");
+  Serial.println(payload);
+  http.end();
+  DeserializationError error = deserializeJson(doc, payload);
+  if (error) {
+    Serial.print(F("Failed to parse JSON: "));
+    Serial.println(error.f_str());
+  } else  {
+    activity = doc["activity"];
+    time_on = doc["time_on"];
+    time_off = doc["time_off"];
+    String orario=timeHM();
+    Serial.print("on ");
+    Serial.print(time_on);
+    Serial.print(" off ");
+    Serial.print(time_off);
+    Serial.print(" orario ");
+    Serial.println(orario);
+    if (orario == time_on && status!="UP") {//&& è booleano mentre & è bitwise
+      digitalWrite(RELE_02, LOW);
+      delay(100);//aspetto per evitare inerzia motore in caso di inversione
+      digitalWrite(RELE_01, HIGH); 
+      Serial.println("***********************************************");
+      Serial.println("APERTURA ");
+      Serial.println("***********************************************");
+      delay (30000);
+      digitalWrite(RELE_01, LOW); 
+      delay (40000);
+    }
+    if (orario == time_off && status!="DOWN")  {
+      digitalWrite(RELE_01, LOW);
+      delay(100);//aspetto per evitare inerzia motore in caso di inversione
+      digitalWrite(RELE_02, HIGH); 
+      Serial.println("***********************************************");
+      Serial.println("CHIUSURA ");
+      Serial.println("***********************************************");
+      delay (30000);
+      digitalWrite(RELE_02, LOW); 
+      delay (40000);
+    }
+  }
+}
+
+void relays(){
+  if(strcmp(activity, "OFF") == 0 && status!="OFF"){
+    digitalWrite(RELE_01, LOW); 
+    digitalWrite(RELE_02, LOW); 
+    status="OFF";
+    Serial.println("***********************************************");
+    Serial.println("SPEGNIMENTO");
+    Serial.println("***********************************************");
+  }
+  if(strcmp(activity, "UP") == 0 && status!="UP"){
+    digitalWrite(RELE_02, LOW);
+    delay(100);//aspetto per evitare inerzia motore in caso di inversione
+    digitalWrite(RELE_01, HIGH); 
+    status="UP";
+    tempo=millis();
+    delta=0;
+    Serial.println("***********************************************");
+    Serial.println("APERTURA ");
+    Serial.println("***********************************************");
+  }
+  if(strcmp(activity, "DOWN") == 0 && status!="DOWN"){
+    digitalWrite(RELE_01, LOW);
+    delay(100);//aspetto per evitare inerzia motore in caso di inversione
+    digitalWrite(RELE_02, HIGH); 
+    status="DOWN";
+    tempo=millis();
+    delta=0;
+    Serial.println("***********************************************");
+    Serial.println("CHIUSURA ");
+    Serial.println("***********************************************");
+    }
+  delta=millis()-tempo;
+  if(delta > 30000  & status!="OFF"){
+    digitalWrite(RELE_01, LOW); 
+    digitalWrite(RELE_02, LOW); 
+    status="OFF";
+    Serial.println("***********************************************");
+    Serial.println("TIMEOUT");
+    Serial.println("***********************************************");
+    updatedata();
+  }
+}
 
 void config(){
   connecting_process_timed_out = 10;
@@ -74,22 +246,21 @@ void config(){
     Serial.println("Abilitato");
   }
   payload = "";
-  postData = "board="; //--> Variables sent for HTTP POST request data.
-  postData += board; //--> Variables sent for HTTP POST request data.
+  postData = "board=";
+  postData += board; 
   strcat(destination ,site);
   strcat(destination ,"getdata.php");
   Serial.println("---------------");
   Serial.println(destination);
-
-  http.begin(destination);  //--> Specify request destination
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
-  httpCode = http.POST(postData); //--> Send the request
-  payload = http.getString();     //--> Get the response payload
+  http.begin(destination);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  httpCode = http.POST(postData);
+  payload = http.getString();
   Serial.print("httpCode : ");
-  Serial.println(httpCode); //--> Print HTTP return code
+  Serial.println(httpCode);
   Serial.print("payload  : ");
-  Serial.println(payload);  //--> Print request response payload
-  http.end();  //--> Close connection
+  Serial.println(payload);
+  http.end();
   DeserializationError error = deserializeJson(doc, payload);
   if (error) {
     Serial.print(F("Failed to parse JSON: "));
@@ -102,12 +273,12 @@ void config(){
     Serial.println(site);
     if(strcmp(gsite, site) != 0 & strcmp(gsite, "") != 0){
       Serial.println("***********************************************");
-      Serial.println("cambio SSID");
+      Serial.println("cambio sito");
       Serial.println("***********************************************");
       ssid=gssid;
     } else  {
       Serial.println("***********************************************");
-      Serial.println("SSID CONFERMATO");
+      Serial.println("sito CONFERMATO");
       Serial.println("***********************************************");
     } 
     gssid = doc["SSID"];
@@ -165,122 +336,32 @@ void connect(){
 }
 
 void setup() {
-  Serial.begin(115200); //--> Initialize serial communications with the PC.
+  Serial.begin(115200);
   Serial.println("\n-------------");
   Serial.println("Initialized serial communications with the PC.");
-  pinMode(RELE_01,OUTPUT); //--> RELE_01 port Direction output.
-  pinMode(RELE_02,OUTPUT); //--> RELE_02 port Direction output.
-  pinMode(ON_Board_LED,OUTPUT); //--> RELE_02 port Direction output.
-  digitalWrite(RELE_01, HIGH); //--> Turn off Led RELE_01.
+  pinMode(RELE_01,OUTPUT);
+  pinMode(RELE_02,OUTPUT);
+  pinMode(ON_Board_LED,OUTPUT);
+  digitalWrite(RELE_01, HIGH);
   delay(250);
-  digitalWrite(RELE_01, LOW); //--> Turn off Led RELE_01.
+  digitalWrite(RELE_01, LOW);
   delay(250);
-  digitalWrite(RELE_02, HIGH); //--> Turn off Led RELE_02.
+  digitalWrite(RELE_02, HIGH);
   delay(250);
-  digitalWrite(RELE_02, LOW); //--> Turn off Led RELE_02.
+  digitalWrite(RELE_02, LOW);
   delay(250);
-
+  // configTime(MY_TZ, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
+  configTime(0,0, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
+  setenv("TZ","CET-1CEST,M3.5.0/02,M10.5.0/03" ,1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
+  tzset();
+  Serial.println("NTP TZ DST - wait 1 minute");
+  delay(60000);
   config();
   connect();
   
   status="OFF";
   tempo=0;
   delta=0;
-}
-
-void updatedata(){
-  payload = "";
-  postData = "board="; //--> Variables sent for HTTP POST request data.
-  postData += board; //--> Variables sent for HTTP POST request data.
-  postData +="&activity=OFF";
-  Serial.println("---------------");
-  Serial.println("updatedata");  
-  Serial.println(postData);
-  strcpy(destination ,site);
-  strcat(destination ,"updatedata.php");
-  Serial.println(destination);
-  http.begin(destination);  //--> Specify request destination
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
-  httpCode = http.POST(postData); //--> Send the request
-  payload = http.getString();     //--> Get the response payload
-  Serial.print("httpCode : ");
-  Serial.println(httpCode); //--> Print HTTP return code
-  Serial.print("payload  : ");
-  Serial.println(payload);  //--> Print request response payload
-  http.end();  //--> Close connection
-}
-
-void getdata(){
-  payload = "";
-  postData = "board="; //--> Variables sent for HTTP POST request data.
-  postData += board; //--> Variables sent for HTTP POST request data.
-  Serial.println("---------------");
-  Serial.println("getdata");
-  Serial.println(postData);
-  strcpy(destination ,site);
-  strcat(destination ,"getdata.php");
-  Serial.println(destination);
-  http.begin(destination);  //--> Specify request destination
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");        //--> Specify content-type header
-  httpCode = http.POST(postData); //--> Send the request
-  payload = http.getString();     //--> Get the response payload
-  Serial.print("httpCode : ");
-  Serial.println(httpCode); //--> Print HTTP return code
-  Serial.print("payload  : ");
-  Serial.println(payload);  //--> Print request response payload
-  http.end();  //--> Close connection
-}
-
-void relays(){
-  DeserializationError error = deserializeJson(doc, payload);
-  if (error) {
-    Serial.print(F("Failed to parse JSON: "));
-    Serial.println(error.f_str());
-  } else  {
-    activity = doc["activity"];
-    Serial.print("activity ");
-    Serial.println(activity);
-    if(strcmp(activity, "OFF") == 0 && status!="OFF"){
-      digitalWrite(RELE_01, LOW); 
-      digitalWrite(RELE_02, LOW); 
-      status="OFF";
-      Serial.println("***********************************************");
-      Serial.println("SPEGNIMENTO");
-      Serial.println("***********************************************");
-    }
-    if(strcmp(activity, "UP") == 0 && status!="UP"){
-      digitalWrite(RELE_02, LOW);
-      delay(100);//aspetto per evitare inerzia motore in caso di inversione
-      digitalWrite(RELE_01, HIGH); 
-      status="UP";
-      tempo=millis();
-      delta=0;
-      Serial.println("***********************************************");
-      Serial.println("APERTURA ");
-      Serial.println("***********************************************");
-    }
-    if(strcmp(activity, "DOWN") == 0 && status!="DOWN"){
-      digitalWrite(RELE_01, LOW);
-      delay(100);//aspetto per evitare inerzia motore in caso di inversione
-      digitalWrite(RELE_02, HIGH); 
-      status="DOWN";
-      tempo=millis();
-      delta=0;
-      Serial.println("***********************************************");
-      Serial.println("CHIUSURA ");
-      Serial.println("***********************************************");
-    }
-    delta=millis()-tempo;
-    if(delta > 30000  & status!="OFF"){
-      digitalWrite(RELE_01, LOW); 
-      digitalWrite(RELE_02, LOW); 
-      status="OFF";
-      Serial.println("***********************************************");
-      Serial.println("TIMEOUT");
-      Serial.println("***********************************************");
-      updatedata();
-    }
-  }
 }
 
 void loop() {

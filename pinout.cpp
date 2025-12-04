@@ -1,6 +1,8 @@
+//valori per scheda 220v due relè
 #define LED_ROSSO 23
 #define RELE1 16
 #define RELE2 17
+
 #include <Arduino.h>
 void setup() {
   Serial.begin(115200); //--> Initialize serial communications with the PC.
