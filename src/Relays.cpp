@@ -3,14 +3,15 @@
 #include <ArduinoJSON.h>
 #include <ESPmDNS.h>
 #define ADDR  "tappa" 
-//valori per scheda relè esterna
-// #define ON_Board_LED 2
+//valori led blu per scheda dev
+#define ON_Board_LED 2
+// valori per scheda relè esterna
 // #define RELE_01 26 
 // #define RELE_02 27 
 //NB il relè ha la logica invertita
 
 //valori per scheda relè a 220V
-#define ON_Board_LED 23
+// #define ON_Board_LED 23
 #define RELE_01 16 
 #define RELE_02 17 
 
@@ -20,7 +21,7 @@ String board="ESP32_03";
 const char* site = "http://hp-i3-ok/tappa/";
 char destination[255];
 const char* ssid = "TIM-39751438";
-// const char* ssid = "TIM-39751438-MINI";
+// const char* ssid = "TIM-39751438_MINI";
 // const char* ssid = "TIM-39751438_EXT";
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
 String payload = "";
@@ -197,7 +198,7 @@ void relays(){
     Serial.println("***********************************************");
     Serial.println("CHIUSURA ");
     Serial.println("***********************************************");
-    }
+  }
   delta=millis()-tempo;
   if(delta > 30000  & status!="OFF"){
     digitalWrite(RELE_01, LOW); 
@@ -265,7 +266,7 @@ void config(){
   if (error) {
     Serial.print(F("Failed to parse JSON: "));
     Serial.println(error.f_str());
-  } else  {
+  } else {
     gsite = doc["site"];
     Serial.print("gssid ");
     Serial.println(gsite);
@@ -276,7 +277,7 @@ void config(){
       Serial.println("cambio sito");
       Serial.println("***********************************************");
       ssid=gssid;
-    } else  {
+    } else {
       Serial.println("***********************************************");
       Serial.println("sito CONFERMATO");
       Serial.println("***********************************************");
@@ -291,7 +292,7 @@ void config(){
       Serial.println("cambio SSID");
       Serial.println("***********************************************");
       ssid=gssid;
-    } else  {
+    } else {
       Serial.println("***********************************************");
       Serial.println("SSID CONFERMATO");
       Serial.println("***********************************************");
@@ -350,15 +351,19 @@ void setup() {
   delay(250);
   digitalWrite(RELE_02, LOW);
   delay(250);
+  config();
+  connect();
   // configTime(MY_TZ, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
   configTime(0,0, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
   setenv("TZ","CET-1CEST,M3.5.0/02,M10.5.0/03" ,1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
   tzset();
   Serial.println("NTP TZ DST - wait 1 minute");
-  delay(60000);
-  config();
-  connect();
-  
+  for (int i=0;i<60;i++){
+    digitalWrite(ON_Board_LED, HIGH);
+    delay(500);
+    digitalWrite(ON_Board_LED, LOW);
+    delay(500);
+  }
   status="OFF";
   tempo=0;
   delta=0;
