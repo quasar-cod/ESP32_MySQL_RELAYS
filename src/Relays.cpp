@@ -4,21 +4,21 @@
 #include <ESPmDNS.h>
 #define ADDR  "tappa" 
 //valori led blu per scheda dev
-#define ON_Board_LED 2
+// #define ON_Board_LED 2
 // valori per scheda relè esterna
 // #define RELE_01 26 
 // #define RELE_02 27 
 //NB il relè ha la logica invertita
 
 //valori per scheda relè a 220V
-// #define ON_Board_LED 23
+#define ON_Board_LED 23
 #define RELE_01 16 
 #define RELE_02 17 
 
 String board="ESP32_03";
 // const char* site = "http://dannaviaggi.altervista.org/";
-// const char* site = "http://hp-i3/tappa/";
-const char* site = "http://hp-i3-ok/tappa/";
+const char* site = "http://hp-i3/tappa/";
+// const char* site = "http://hp-i3-ok/tappa/";
 char destination[255];
 const char* ssid = "TIM-39751438";
 // const char* ssid = "TIM-39751438_MINI";
@@ -37,6 +37,7 @@ JsonDocument doc;
 int tempo;
 int delta;
 String status;
+bool ko=true;
 int pt = 1;
 #include <time.h>                   // for time() ctime()
 #define MY_NTP_SERVER "it.pool.ntp.org"           
@@ -45,6 +46,8 @@ time_t now;                         // this are the seconds since Epoch (1970) -
 tm tmn;                              // the structure tm holds time information in a more convenient way
 const char* time_on;
 const char* time_off;
+const char* S_time_on="06:30:00";
+const char* S_time_off="23:30:00";
 
 String dateYMD(){
   time(&now);
@@ -128,43 +131,48 @@ void getdata(){
   Serial.print("payload  : ");
   Serial.println(payload);
   http.end();
+  String orario=timeHM();
   DeserializationError error = deserializeJson(doc, payload);
   if (error) {
+    ko=true;
     Serial.print(F("Failed to parse JSON: "));
     Serial.println(error.f_str());
-  } else  {
+  }
+  else  {
+    ko=false;
     activity = doc["activity"];
     time_on = doc["time_on"];
     time_off = doc["time_off"];
-    String orario=timeHM();
     Serial.print("on ");
     Serial.print(time_on);
     Serial.print(" off ");
     Serial.print(time_off);
     Serial.print(" orario ");
     Serial.println(orario);
-    if (orario == time_on && status!="UP") {//&& è booleano mentre & è bitwise
-      digitalWrite(RELE_02, LOW);
-      delay(100);//aspetto per evitare inerzia motore in caso di inversione
-      digitalWrite(RELE_01, HIGH); 
-      Serial.println("***********************************************");
-      Serial.println("APERTURA ");
-      Serial.println("***********************************************");
-      delay (30000);
-      digitalWrite(RELE_01, LOW); 
-      delay (40000);
-    }
-    if (orario == time_off && status!="DOWN")  {
-      digitalWrite(RELE_01, LOW);
-      delay(100);//aspetto per evitare inerzia motore in caso di inversione
-      digitalWrite(RELE_02, HIGH); 
-      Serial.println("***********************************************");
-      Serial.println("CHIUSURA ");
-      Serial.println("***********************************************");
-      delay (30000);
-      digitalWrite(RELE_02, LOW); 
-      delay (40000);
-    }
+  }
+  if ((orario == time_on && status!="UP" && ko==false)||
+    (orario == S_time_on && ko==true)) {//&& è booleano mentre & è bitwise
+    digitalWrite(RELE_02, LOW);
+    delay(100);//aspetto per evitare inerzia motore in caso di inversione
+    digitalWrite(RELE_01, HIGH); 
+    Serial.println("***********************************************");
+    Serial.println("APERTURA ");
+    Serial.println("***********************************************");
+    delay (30000);
+    digitalWrite(RELE_01, LOW); 
+    delay (40000);
+  }
+  if ((orario == time_off && status!="DOWN" && ko==false)||
+    (orario == S_time_off && ko==true)) {
+    digitalWrite(RELE_01, LOW);
+    delay(100);//aspetto per evitare inerzia motore in caso di inversione
+    digitalWrite(RELE_02, HIGH); 
+    Serial.println("***********************************************");
+    Serial.println("CHIUSURA ");
+    Serial.println("***********************************************");
+    delay (30000);
+    digitalWrite(RELE_02, LOW); 
+    delay (40000);
   }
 }
 
@@ -209,6 +217,12 @@ void relays(){
     Serial.println("***********************************************");
     updatedata();
   }
+  Serial.print("status ");
+  Serial.println(status);
+  Serial.print("tempo ");
+  Serial.println(tempo);
+  Serial.print("delta ");
+  Serial.println(delta);
 }
 
 void config(){
@@ -220,11 +234,19 @@ void config(){
   Serial.println("Connecting to MASTER");
   Serial.println("***********************************************");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
+    Serial.print(".");//4 flash
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
+    delay(200);
+    digitalWrite(ON_Board_LED,HIGH);
     delay(100);
+    digitalWrite(ON_Board_LED,LOW);
+    delay(200);
+    digitalWrite(ON_Board_LED,HIGH);
+    delay(100);
+    digitalWrite(ON_Board_LED,LOW);
+    delay(200);
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
@@ -301,7 +323,7 @@ void config(){
 }
 
 void connect(){
-  connecting_process_timed_out = 400;
+  connecting_process_timed_out = 20;
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid,password);
   Serial.println("***********************************************");
@@ -309,15 +331,15 @@ void connect(){
   Serial.println(ssid);
   Serial.println("***********************************************");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
+    Serial.print(".");//3 flash
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
-    delay(100);
+    delay(200);
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
-    delay(100);
+    delay(200);
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
@@ -333,6 +355,27 @@ void connect(){
   Serial.println("Abilito dns");
   if (MDNS.begin(ADDR)) {
     Serial.println("Abilitato");
+  }
+}
+
+void tmz(){
+    // configTime(MY_TZ, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
+  configTime(0,0, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
+  setenv("TZ","CET-1CEST,M3.5.0/02,M10.5.0/03" ,1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
+  tzset();
+  Serial.println("***********************************************");
+  Serial.println("NTP TZ DST - wait 1 minute");
+  Serial.println("***********************************************");
+  for (int i=0;i<44;i++){
+    Serial.print(".");//2 flash
+    digitalWrite(ON_Board_LED,HIGH);
+    delay(100);
+    digitalWrite(ON_Board_LED,LOW);
+    delay(200);
+    digitalWrite(ON_Board_LED,HIGH);
+    delay(100);
+    digitalWrite(ON_Board_LED,LOW);
+    delay(1000);
   }
 }
 
@@ -353,38 +396,22 @@ void setup() {
   delay(250);
   config();
   connect();
-  // configTime(MY_TZ, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
-  configTime(0,0, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
-  setenv("TZ","CET-1CEST,M3.5.0/02,M10.5.0/03" ,1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
-  tzset();
-  Serial.println("NTP TZ DST - wait 1 minute");
-  for (int i=0;i<60;i++){
-    digitalWrite(ON_Board_LED, HIGH);
-    delay(500);
-    digitalWrite(ON_Board_LED, LOW);
-    delay(500);
-  }
+  tmz();
   status="OFF";
   tempo=0;
   delta=0;
 }
 
 void loop() {
-  // if(WiFi.status()== WL_CONNECTED) {
-  //sostituendo .waitForConnectResult a .status non si hanno falsi errori
+  // if(WiFi.status()== WL_CONNECTED) {//spesso genera falsi errori
+  // sostituendo .waitForConnectResult a .status non si hanno falsi errori
   if(WiFi.waitForConnectResult()== WL_CONNECTED) {
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
     delay(2000);
-    getdata();//mettendo un delay dopo la wait getdata fallisce con minore frequnza (?)
+    getdata(); // mettendo un delay dopo la waitForConnectResult la funzione getdata fallisce con minore frequnza
     relays();
-    Serial.print("status ");
-    Serial.println(status);
-    Serial.print("tempo ");
-    Serial.println(tempo);
-    Serial.print("delta ");
-    Serial.println(delta);
   }
   else{ 
     config();
