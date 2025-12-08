@@ -8,7 +8,7 @@
     $sql = 'SELECT a.*,SSID,site,time_on,time_off FROM esp32_activity a 
     inner join esp32_config c on a.board=c.board 
     inner join esp32_schedule s on s.board=c.board 
-    WHERE c.board="' . $board . '" order by date desc, time desc limit 1';
+    WHERE c.board="' . $board . '"  and activity in ("UP","DOWN","OFF") order by date desc, time desc limit 1';
 
     $q = $pdo->prepare($sql);
     $q->execute();

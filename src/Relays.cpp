@@ -15,13 +15,13 @@
 #define RELE_01 16 
 #define RELE_02 17 
 
-String board="ESP32_03";
+String board="ESP32_02";
 // const char* site = "http://dannaviaggi.altervista.org/";
 const char* site = "http://hp-i3/tappa/";
 // const char* site = "http://hp-i3-ok/tappa/";
 char destination[255];
-const char* ssid = "TIM-39751438";
-// const char* ssid = "TIM-39751438_MINI";
+// const char* ssid = "TIM-39751438";
+const char* ssid = "TIM-39751438_TENDA";
 // const char* ssid = "TIM-39751438_EXT";
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
 String payload = "";
@@ -38,7 +38,7 @@ int tempo;
 int delta;
 String status;
 bool ko=true;
-int pt = 1;
+int pt = 0;
 #include <time.h>                   // for time() ctime()
 #define MY_NTP_SERVER "it.pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
@@ -82,6 +82,13 @@ String timeHM(){
   String hms = hh + ":" + mm + ":00";
   return(hms);
 }
+String timeM(){
+  time(&now);
+  localtime_r(&now, &tmn);
+  String m = "00" + String(tmn.tm_min);
+  String mm = m.substring(m.length()-2);
+  return(mm);
+}
 String timeS(){
   time(&now);
   localtime_r(&now, &tmn);
@@ -90,11 +97,11 @@ String timeS(){
   return(ss);
 }
 
-void updatedata(){
+void updatedata(String actv){
   payload = "";
   postData = "board=";
   postData += board;
-  postData +="&activity=OFF";
+  postData +="&activity="+actv;
   Serial.println("---------------");
   Serial.println("updatedata");  
   Serial.println(postData);
@@ -208,14 +215,14 @@ void relays(){
     Serial.println("***********************************************");
   }
   delta=millis()-tempo;
-  if(delta > 30000  & status!="OFF"){
+  if(delta > 30000  && status!="OFF"){
     digitalWrite(RELE_01, LOW); 
     digitalWrite(RELE_02, LOW); 
     status="OFF";
     Serial.println("***********************************************");
     Serial.println("TIMEOUT");
     Serial.println("***********************************************");
-    updatedata();
+    updatedata("OFF");
   }
   Serial.print("status ");
   Serial.println(status);
@@ -234,7 +241,7 @@ void config(){
   Serial.println("Connecting to MASTER");
   Serial.println("***********************************************");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");//4 flash
+    Serial.print(".");//4 flash 20 secondi
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
@@ -323,7 +330,7 @@ void config(){
 }
 
 void connect(){
-  connecting_process_timed_out = 20;
+  connecting_process_timed_out = 60;
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid,password);
   Serial.println("***********************************************");
@@ -331,7 +338,7 @@ void connect(){
   Serial.println(ssid);
   Serial.println("***********************************************");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");//3 flash
+    Serial.print(".");//3 flash 1.7 secondi
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
@@ -355,6 +362,7 @@ void connect(){
   Serial.println("Abilito dns");
   if (MDNS.begin(ADDR)) {
     Serial.println("Abilitato");
+    updatedata("START");
   }
 }
 
@@ -393,7 +401,6 @@ void setup() {
   digitalWrite(RELE_02, HIGH);
   delay(250);
   digitalWrite(RELE_02, LOW);
-  delay(250);
   config();
   connect();
   tmz();
@@ -412,8 +419,17 @@ void loop() {
     delay(2000);
     getdata(); // mettendo un delay dopo la waitForConnectResult la funzione getdata fallisce con minore frequnza
     relays();
+    if(timeM()==("00") && status=="OFF") {
+      if(pt==0){
+        updatedata("TIME");
+        pt=1;
+      }
+    }
+    else{ 
+      pt=0;
+    }
   }
-  else{ 
+  else{
     config();
     connect();
   }

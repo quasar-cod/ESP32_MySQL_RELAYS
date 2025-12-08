@@ -5,7 +5,7 @@
 $myArray = array(); // Initialize an empty array instead of a single object
 $pdo = Database::connect();
 
-$sql = 'SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY board ORDER BY date DESC, time DESC ) AS rn FROM esp32_activity) AS RankedData WHERE rn = 1';
+$sql = 'SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY board ORDER BY date DESC, time DESC ) AS rn FROM esp32_activity) AS RankedData WHERE rn = 1 and activity in ("UP","DOWN","OFF")';
 
 $q = $pdo->prepare($sql);
 $q->execute();
