@@ -2,27 +2,27 @@
 #include <HTTPClient.h>
 #include <ArduinoJSON.h>
 #include <ESPmDNS.h>
-#define ADDR  "tappa" 
+#define ADDR "tappa" 
 //valori led blu per scheda dev
-// #define ON_Board_LED 2
+#define ON_Board_LED 2
 // valori per scheda relè esterna
-// #define RELE_01 26 
-// #define RELE_02 27 
+// #define RELE_01 26
+// #define RELE_02 27
 //NB il relè ha la logica invertita
 
 //valori per scheda relè a 220V
-#define ON_Board_LED 23
-#define RELE_01 16 
-#define RELE_02 17 
+// #define ON_Board_LED 23
+#define RELE_01 16
+#define RELE_02 17
 
-String board="ESP32_02";
+String board="ESP32_03";//1 soggiorno 2 tavernetta 3 notte
 // const char* site = "http://dannaviaggi.altervista.org/";
 const char* site = "http://hp-i3/tappa/";
 // const char* site = "http://hp-i3-ok/tappa/";
 char destination[255];
-// const char* ssid = "TIM-39751438";
-const char* ssid = "TIM-39751438_TENDA";
-// const char* ssid = "TIM-39751438_EXT";
+// const char* ssid = "TIM-39751438";//soggiorno
+// const char* ssid = "TIM-39751438_TENDA";//tavernetta
+const char* ssid = "TIM-39751438_EXT";// notte
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
 String payload = "";
 String postData = "";
@@ -39,11 +39,11 @@ int delta;
 String status;
 bool ko=true;
 int pt = 0;
-#include <time.h>                   // for time() ctime()
+#include <time.h>
 #define MY_NTP_SERVER "it.pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
-time_t now;                         // this are the seconds since Epoch (1970) - UTC
-tm tmn;                              // the structure tm holds time information in a more convenient way
+time_t now;
+tm tmn;
 const char* time_on;
 const char* time_off;
 const char* S_time_on="06:30:00";
@@ -145,7 +145,7 @@ void getdata(){
     Serial.print(F("Failed to parse JSON: "));
     Serial.println(error.f_str());
   }
-  else  {
+  else {
     ko=false;
     activity = doc["activity"];
     time_on = doc["time_on"];
@@ -421,6 +421,7 @@ void loop() {
     relays();
     if(timeM()==("00") && status=="OFF") {
       if(pt==0){
+        delay(random(10000));
         updatedata("TIME");
         pt=1;
       }

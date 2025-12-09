@@ -100,14 +100,6 @@
   </head>
   
   <body>
-    <div class="topnav">
-      <h3>Tappa</h3>
-    </div>
-    
-    <br>
-    
-    <h3 style="color: #0c6980;">Tappa</h3>
-    
     <table class="styled-table" id= "table_id">
       <thead>
         <tr>
@@ -120,7 +112,7 @@
         <?php
           include 'database.php';
           $num = 0;
-          //------------------------------------------------------------ The process for displaying a record table containing the DHT11 sensor data and the state of the LEDs.
+          // The process for displaying a record table containing the DHT11 sensor data and the state of the LEDs.
           $pdo = Database::connect();
           // replace_with_your_table_name, on this project I use the table name 'esp32_table_dht11_leds_record'.
           // This table is used to store and record DHT11 sensor data updated by ESP32. 
