@@ -127,8 +127,13 @@
     <p>Loading data...</p>
   </div>
   <br>
-  <div class="topnav">
-    <button onclick="window.open('recordtable.php', '_blank');">Open Record Table</button>
+  <div class="cards">
+    <div class="card-header" style="border-radius: 15px;">
+      <button onclick="window.open('recordtable.php', '_blank');" 
+      style="padding: 20px 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; background-color: #3498db; 
+      color: white; border: none; border-radius: 8px; transition: background-color 0.3s;">Record Table</button>
+      <h3 style="font-size: 0.7rem;"></h3>
+    </div>
   </div>
 <script>
 //------------------------------------------------------------

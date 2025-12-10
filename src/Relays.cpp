@@ -138,7 +138,6 @@ void getdata(){
   Serial.print("payload  : ");
   Serial.println(payload);
   http.end();
-  String orario=timeHM();
   DeserializationError error = deserializeJson(doc, payload);
   if (error) {
     ko=true;
@@ -150,13 +149,19 @@ void getdata(){
     activity = doc["activity"];
     time_on = doc["time_on"];
     time_off = doc["time_off"];
+    Serial.print("activity ");
+    Serial.print(activity);
     Serial.print("on ");
     Serial.print(time_on);
     Serial.print(" off ");
-    Serial.print(time_off);
-    Serial.print(" orario ");
-    Serial.println(orario);
+    Serial.println(time_off);
   }
+}
+
+void relays(){
+  String orario=timeHM();
+  Serial.print("orario ");
+  Serial.println(orario);
   if ((orario == time_on && status!="UP" && ko==false)||
     (orario == S_time_on && ko==true)) {//&& è booleano mentre & è bitwise
     digitalWrite(RELE_02, LOW);
@@ -181,9 +186,7 @@ void getdata(){
     digitalWrite(RELE_02, LOW); 
     delay (40000);
   }
-}
 
-void relays(){
   if(strcmp(activity, "OFF") == 0 && status!="OFF"){
     digitalWrite(RELE_01, LOW); 
     digitalWrite(RELE_02, LOW); 
@@ -325,7 +328,7 @@ void config(){
       Serial.println("***********************************************");
       Serial.println("SSID CONFERMATO");
       Serial.println("***********************************************");
-    } 
+    }
   }
 }
 
@@ -367,8 +370,9 @@ void connect(){
 }
 
 void tmz(){
-    // configTime(MY_TZ, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
-  configTime(0,0, MY_NTP_SERVER); // --> Here is the IMPORTANT ONE LINER needed in your sketch!
+  // --> Here is the IMPORTANT ONE LINER needed in your sketch!
+  // configTime(MY_TZ, MY_NTP_SERVER); //sulle esp8266 basta questa sola riga e le define
+  configTime(0,0, MY_NTP_SERVER); //sulle ESP32 occorre separare in tre righe 
   setenv("TZ","CET-1CEST,M3.5.0/02,M10.5.0/03" ,1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
   tzset();
   Serial.println("***********************************************");
