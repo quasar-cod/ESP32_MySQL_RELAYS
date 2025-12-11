@@ -15,7 +15,8 @@
 #define RELE_01 16
 #define RELE_02 17
 
-String board="ESP32_03";//1 soggiorno 2 tavernetta 3 notte
+int i1 = 3;//1 soggiorno 2 tavernetta 3 notte
+String board;
 // const char* site = "http://dannaviaggi.altervista.org/";
 const char* site = "http://hp-i3/tappa/";
 // const char* site = "http://hp-i3-ok/tappa/";
@@ -24,8 +25,8 @@ char destination[255];
 // const char* ssid = "TIM-39751438_TENDA";//tavernetta
 const char* ssid = "TIM-39751438_EXT";// notte
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
-String payload = "";
-String postData = "";
+String payload;
+String postData;
 HTTPClient http;
 int httpCode;
 int connecting_process_timed_out;
@@ -37,8 +38,8 @@ JsonDocument doc;
 int tempo;
 int delta;
 String status;
-bool ko=true;
-int pt = 0;
+bool ko;
+int pt;
 #include <time.h>
 #define MY_NTP_SERVER "it.pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
@@ -289,14 +290,14 @@ void config(){
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   httpCode = http.POST(postData);
   payload = http.getString();
-  Serial.print("httpCode : ");
+  Serial.print("httpCode: ");
   Serial.println(httpCode);
-  Serial.print("payload  : ");
+  Serial.print("payload: ");
   Serial.println(payload);
   http.end();
   DeserializationError error = deserializeJson(doc, payload);
   if (error) {
-    Serial.print(F("Failed to parse JSON: "));
+    Serial.print(F("Failed to parse JSON"));
     Serial.println(error.f_str());
   } else {
     gsite = doc["site"];
@@ -357,15 +358,20 @@ void connect(){
     if(connecting_process_timed_out > 0) connecting_process_timed_out--;
     if(connecting_process_timed_out == 0) ESP.restart();
   }
-  Serial.println("\nSuccessfully connected to ");
+  Serial.println("\n***********************************************");
+  Serial.print("Successfully connected to ");
   Serial.println(WiFi.SSID());
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
   Serial.println("-------------");
   Serial.println("Abilito dns");
   if (MDNS.begin(ADDR)) {
+    Serial.println("-------------");
     Serial.println("Abilitato");
+    Serial.println("***********************************************");
     updatedata("START");
+  }else{
+    ESP.restart();
   }
 }
 
@@ -375,7 +381,7 @@ void tmz(){
   configTime(0,0, MY_NTP_SERVER); //sulle ESP32 occorre separare in tre righe 
   setenv("TZ","CET-1CEST,M3.5.0/02,M10.5.0/03" ,1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
   tzset();
-  Serial.println("***********************************************");
+  Serial.println("\n***********************************************");
   Serial.println("NTP TZ DST - wait 1 minute");
   Serial.println("***********************************************");
   for (int i=0;i<44;i++){
@@ -393,8 +399,11 @@ void tmz(){
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n-------------");
-  Serial.println("Initialized serial communications with the PC.");
+  board="ESP32_0" + String(i1);
+  Serial.println("\n***********************************************");
+  Serial.print("Initialized serial communications with board ");
+  Serial.println(board);
+  Serial.println("***********************************************");
   pinMode(RELE_01,OUTPUT);
   pinMode(RELE_02,OUTPUT);
   pinMode(ON_Board_LED,OUTPUT);
@@ -411,6 +420,7 @@ void setup() {
   status="OFF";
   tempo=0;
   delta=0;
+  pt=0;
 }
 
 void loop() {
@@ -425,7 +435,7 @@ void loop() {
     relays();
     if(timeM()==("00") && status=="OFF") {
       if(pt==0){
-        delay(random(10000));
+        delay(i1*10000);
         updatedata("TIME");
         pt=1;
       }

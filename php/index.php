@@ -142,17 +142,11 @@
   setInterval(myTimer, 10000);  
 //------------------------------------------------------------
   function myTimer() {
-    Get_All("");
+    Get_All();
   }
 //------------------------------------------------------------
-  function Get_All(board) {
-    if (window.XMLHttpRequest) {
-        // code for IE7+, Firefox, Chrome, Opera, Safari
-        xmlhttp = new XMLHttpRequest();
-    } else {
-        // code for IE6, IE5
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
+  function Get_All() {
+    xmlhttp = new XMLHttpRequest();
     console.log("getting ALL");
     xmlhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
@@ -193,17 +187,7 @@
 //------------------------------------------------------------
   function SetThreeState(boardId, state) {
     console.log("SETTING: " ,boardId,"activity:", state);
-    if (window.XMLHttpRequest) {
-      // code for IE7+, Firefox, Chrome, Opera, Safari
-      xmlhttp = new XMLHttpRequest();
-    } else {
-        // code for IE6, IE5
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    // xmlhttp.onreadystatechange = function() {
-    //   if (this.readyState == 4 && this.status == 200) {
-    //      }
-    //   }
+    xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST","updatedata.php",true);
     xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     xmlhttp.send("board="+boardId+"&activity="+state);
@@ -212,34 +196,27 @@
   async function fetchConfigData() {
     const listContainer = document.getElementById('config-list');
     listContainer.innerHTML = ''; // Clear the "Loading" message
-    try {
-      // 1. Make the AJAX request to the PHP endpoint
+    try { // 1. Make the AJAX request to the PHP endpoint
       const response = await fetch('getconfig.php');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      // 2. Parse the JSON response
       const dataArray = await response.json(); 
       if (dataArray.length === 0) {
         listContainer.innerHTML = '<p>No configuration records found.</p>';
         return;
       }
       console.log("geting config");
-      // 3. Iterate over the array and create list items with switches
       dataArray.forEach((item, index) => {
         // Create a unique ID suffix for inputs/labels in this row
         const rowId = index + 1; 
-        // The actual board identifier is needed for the onclick function
-        const boardIdentifier = `${item.board}`; // e.g., ESP32_1, ESP32_2, etc.
+        const boardIdentifier = `${item.board}`;
         // Create the container for the row
         const rowDiv = document.createElement('div');
         rowDiv.classList.add('card');
-        // --- Left Side: Data Display ---
         const dataDisplay = document.createElement('h3');
         dataDisplay.textContent = `${item.name}`;
         rowDiv.appendChild(dataDisplay);
-        // --- Right Side: Three-State Switch Control ---
-        // Create the switch container
         const switchDiv = document.createElement('div');
         switchDiv.classList.add('three-state-switch');
         // Helper function to create radio inputs and labels
@@ -259,20 +236,14 @@
           switchDiv.appendChild(input);
           switchDiv.appendChild(label);
         }
-        // Create DOWN control
         createRadioControl('DOWN', 'DOWN', false);
-        // Create OFF control (set as default checked)
         createRadioControl('OFF', 'O', true); 
-        // Create UP control
         createRadioControl('UP', 'UP', false);
-        // Append the switch to the row
         rowDiv.appendChild(switchDiv);
-        // Append the entire row to the main container
         listContainer.appendChild(rowDiv);
       });
       Get_All("")
     } catch (error) {
-      // Display error message
       listContainer.innerHTML = `<p>Error loading data: ${error.message}</p>`;
       console.error("Fetch error:", error);
     }
