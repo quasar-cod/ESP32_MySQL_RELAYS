@@ -1,122 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Tapparelle</title>
-<style>
+  <meta charset="UTF-8">
+  <title>Tapparelle</title>
+  <style>
 
-    html {
-        font-family: Arial, sans-serif;
-        display: inline-block;
-        text-align: center;
-        /* CRITICAL CHANGE: Set a large, fixed base font size for small screens (mobile).
-           All 'rem' units will be calculated from this large base. */
-        font-size: 26px; 
+  html {font-family: Arial, sans-serif; display: inline-block; text-align: center; font-size: 26px; }
+  body {margin: 0; padding: 10px; font-size: 16px; }
+  p {font-size: 1rem;} 
+  h3 {font-size: 2rem; margin: 0;}
+  .reading {font-size: 1.3rem;}
+  .packet {color: #bebebe; font-size: 0.5rem;} 
+  .topnav {overflow: hidden; background-color: #480c80ff; color: white; font-size: 3rem; }
+  .content {padding: 5px;}
+  .cards {max-width: 1200px;margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));  grid-gap: 15px; padding: 0;}
+  .card { background-color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1);border: 2px solid #0c6980; border-radius: 15px;padding: 15px;text-align: center; margin-bottom: 5px;}
+  .card-header {background-color: #0c6980; color: white; border-radius: 15px;padding: 10px;}
+  .config-item {display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 5px 0;}
+  .three-state-switch {display: inline-flex;border: 3px solid #ccc; border-radius: 5px;overflow: hidden;margin-top: 10px;}
+  .three-state-switch input[type="radio"] { display: none; }
+  .three-state-switch label {padding: 10px 15px; cursor: pointer;background-color: #f0f0f0;transition: background-color 0.3s;white-space: nowrap; font-size: 3rem; }
+  .three-state-switch input[type="radio"]:checked + label {background-color: #4CAF50;color: white;}
+  @media (min-width: 600px) {
+    .config-item {flex-direction: row; text-align: left;}
+    .three-state-switch {margin: 0;font-size: 1rem;}
+    .card h3 {text-align: left;}
     }
-    
-    
-    body {
-        margin: 0;
-        padding: 10px;
-        font-size: 16px; 
-    }
-    
-    /* 3. Typography Adjustments (Now proportional to the base size) */
-    /* REM values remain the same, but they now calculate off a 26px mobile base. */
-    p {font-size: 1rem;} 
-    h3 {font-size: 2rem; margin: 0;}
-    .reading {font-size: 1.3rem;}
-    .packet {color: #bebebe; font-size: 0.5rem;} 
-
-    /* 4. Top Navigation */
-    .topnav {
-        overflow: hidden; 
-        background-color: #480c80ff; 
-        color: white; 
-        font-size: 3rem; 
-    }
-
-    /* 5. Content and Card Layout */
-    .content {
-        padding: 5px;
-    }
-    
-    .cards {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: grid;
-        /* Minmax width reduced to 100% on small screens */
-        grid-template-columns: repeat(auto-fit, minmax(100%, 1fr)); 
-        grid-gap: 15px;
-        padding: 0;
-    }
-
-
-    .card {
-        background-color: white; 
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        border: 2px solid #0c6980; 
-        border-radius: 15px;
-        padding: 15px;
-        text-align: center; 
-        margin-bottom: 5px; 
-    }
-    
-    .card-header {
-        background-color: #0c6980; 
-        color: white; 
-        border-radius: 15px;
-        padding: 10px;
-    }
-
-    /* 6. Switch and Item Layout */
-    .config-item {
-        display: flex;
-        flex-direction: column; 
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px 0;
-    }
-
-    /* 7. Three-State Switch Styling */
-    .three-state-switch {
-        display: inline-flex;
-        border: 3px solid #ccc;
-        border-radius: 5px;
-        overflow: hidden;
-        margin-top: 10px;
-    }
-    .three-state-switch input[type="radio"] { display: none; }
-    .three-state-switch label {
-        padding: 10px 15px; 
-        cursor: pointer;
-        background-color: #f0f0f0;
-        transition: background-color 0.3s;
-        white-space: nowrap; 
-        font-size: 3rem; /* Adjusted for readability on the 26px base */
-    }
-    .three-state-switch input[type="radio"]:checked + label {
-        background-color: #4CAF50;
-        color: white;
-    }
-
-    /* 8. Media Queries for Desktop Layout (Adjusted flex direction for PC) */
-    @media (min-width: 600px) {
-        .config-item {
-            flex-direction: row; 
-            text-align: left;
-        }
-
-        .three-state-switch {
-            margin: 0;
-        font-size: 1rem; /* Adjusted for readability on the 26px base */
-        }
-        
-        .card h3 {
-            text-align: left;
-        }
-    }
-</style>
+  </style>
 </head>
 <body>
   <div class="topnav">

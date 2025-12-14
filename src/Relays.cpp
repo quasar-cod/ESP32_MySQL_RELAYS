@@ -4,27 +4,26 @@
 #include <ESPmDNS.h>
 #define ADDR "tappa" 
 //valori led blu per scheda dev
-#define ON_Board_LED 2
+// #define ON_Board_LED 2
 // valori per scheda relè esterna
 // #define RELE_01 26
 // #define RELE_02 27
 //NB il relè ha la logica invertita
 
 //valori per scheda relè a 220V
-// #define ON_Board_LED 23
+#define ON_Board_LED 23
 #define RELE_01 16
 #define RELE_02 17
 
-int i1 = 3;//1 soggiorno 2 tavernetta 3 notte
+int i1 = 2;//1 soggiorno 2 tavernetta 3 notte
 String board;
-// const char* site = "http://dannaviaggi.altervista.org/";
-const char* site = "http://hp-i3/tappa/";
-// const char* site = "http://hp-i3-ok/tappa/";
-char destination[255];
 // const char* ssid = "TIM-39751438";//soggiorno
-// const char* ssid = "TIM-39751438_TENDA";//tavernetta
-const char* ssid = "TIM-39751438_EXT";// notte
+const char* ssid = "TIM-39751438_TENDA";//2 tavernetta
+// const char* ssid = "TIM-39751438_EXT";// notte
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
+const char* site = "http://dannaviaggi.altervista.org/";
+//const char* site = "http://hp-i3/tappa/";
+// const char* site = "http://hp-i3-ok/tappa/";
 String payload;
 String postData;
 HTTPClient http;
@@ -34,6 +33,7 @@ const char* activity = nullptr;
 const char* gssid = nullptr; 
 const char* gsite = nullptr; 
 JsonDocument doc; 
+char destination[255];
 
 int tempo;
 int delta;
@@ -245,7 +245,7 @@ void config(){
   Serial.println("Connecting to MASTER");
   Serial.println("***********************************************");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");//4 flash 20 secondi
+    Serial.print(".");//4 flash 2 secondi
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
@@ -314,7 +314,7 @@ void config(){
       Serial.println("***********************************************");
       Serial.println("sito CONFERMATO");
       Serial.println("***********************************************");
-    } 
+    }
     gssid = doc["SSID"];
     Serial.print("gssid ");
     Serial.println(gssid);
@@ -334,45 +334,48 @@ void config(){
 }
 
 void connect(){
-  connecting_process_timed_out = 60;
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid,password);
-  Serial.println("***********************************************");
-  Serial.println("Connecting to ");
-  Serial.println(ssid);
-  Serial.println("***********************************************");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");//3 flash 1.7 secondi
-    digitalWrite(ON_Board_LED,HIGH);
-    delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(200);
-    digitalWrite(ON_Board_LED,HIGH);
-    delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(200);
-    digitalWrite(ON_Board_LED,HIGH);
-    delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(1000);
-    if(connecting_process_timed_out > 0) connecting_process_timed_out--;
-    if(connecting_process_timed_out == 0) ESP.restart();
-  }
-  Serial.println("\n***********************************************");
-  Serial.print("Successfully connected to ");
-  Serial.println(WiFi.SSID());
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-  Serial.println("-------------");
-  Serial.println("Abilito dns");
-  if (MDNS.begin(ADDR)) {
-    Serial.println("-------------");
-    Serial.println("Abilitato");
+  int r;
+  for (r=1;r<10;r++){
+    connecting_process_timed_out = 35;
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid,password);
     Serial.println("***********************************************");
-    updatedata("START");
-  }else{
-    ESP.restart();
+    Serial.println("Connecting to ");
+    Serial.println(ssid);
+    Serial.println("***********************************************");
+    while (WiFi.status() != WL_CONNECTED & (connecting_process_timed_out > 0)){
+      Serial.print(".");//3 flash 1.7 secondi
+      digitalWrite(ON_Board_LED,HIGH);
+      delay(100);
+      digitalWrite(ON_Board_LED,LOW);
+      delay(200);
+      digitalWrite(ON_Board_LED,HIGH);
+      delay(100);
+      digitalWrite(ON_Board_LED,LOW);
+      delay(200);
+      digitalWrite(ON_Board_LED,HIGH);
+      delay(100);
+      digitalWrite(ON_Board_LED,LOW);
+      delay(1000);
+      connecting_process_timed_out--;
+    }
+    Serial.println("\n***********************************************");
+    Serial.print("Successfully connected to ");
+    Serial.println(WiFi.SSID());
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+    Serial.println("-------------");
+    Serial.println("Abilito dns");
+    if (MDNS.begin(ADDR)){
+      Serial.println("-------------");
+      Serial.println("Abilitato");
+      Serial.println("***********************************************");
+      updatedata("CONNECT");
+      break;
+    }
+    delay(r*60000);
   }
+  if (r==10) ESP.restart();
 }
 
 void tmz(){
@@ -385,7 +388,7 @@ void tmz(){
   Serial.println("NTP TZ DST - wait 1 minute");
   Serial.println("***********************************************");
   for (int i=0;i<44;i++){
-    Serial.print(".");//2 flash
+    Serial.print(".");//2 flash 1.4 secondi
     digitalWrite(ON_Board_LED,HIGH);
     delay(100);
     digitalWrite(ON_Board_LED,LOW);
@@ -414,9 +417,10 @@ void setup() {
   digitalWrite(RELE_02, HIGH);
   delay(250);
   digitalWrite(RELE_02, LOW);
-  config();
+  // config();
   connect();
   tmz();
+  updatedata("SETUP");
   status="OFF";
   tempo=0;
   delta=0;
