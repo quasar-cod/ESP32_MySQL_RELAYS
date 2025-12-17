@@ -15,15 +15,16 @@
 #define RELE_01 16
 #define RELE_02 17
 
-int i1 = 2;//1 soggiorno 2 tavernetta 3 notte
-String board;
-// const char* ssid = "TIM-39751438";//soggiorno
-const char* ssid = "TIM-39751438_TENDA";//2 tavernetta
-// const char* ssid = "TIM-39751438_EXT";// notte
+int i1 = 3;//1 soggiorno 2 tavernetta 3 notte
+// const char* ssid = "TIM-39751438";//1 soggiorno
+// const char* ssid = "TIM-39751438_TENDA";//2 tavernetta
+const char* ssid = "TIM-39751438_EXT";// 3 notte
+
 const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
-const char* site = "http://dannaviaggi.altervista.org/";
+const char* site = "http://myhomesmart.altervista.org/";
 //const char* site = "http://hp-i3/tappa/";
-// const char* site = "http://hp-i3-ok/tappa/";
+
+String board;
 String payload;
 String postData;
 HTTPClient http;
@@ -278,58 +279,61 @@ void config(){
   Serial.println("Abilito dns");
   if (MDNS.begin(ADDR)) {
     Serial.println("Abilitato");
+    payload = "";
+    postData = "board=";
+    postData += board; 
+    strcat(destination ,site);
+    strcat(destination ,"getdata.php");
+    Serial.println("---------------");
+    Serial.println(destination);
+    http.begin(destination);
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    httpCode = http.POST(postData);
+    payload = http.getString();
+    Serial.print("httpCode: ");
+    Serial.println(httpCode);
+    Serial.print("payload: ");
+    Serial.println(payload);
+    http.end();
+    DeserializationError error = deserializeJson(doc, payload);
+    if (error) {
+      Serial.print(F("Failed to parse JSON"));
+      Serial.println(error.f_str());
+    } else {
+      gsite = doc["site"];
+      Serial.print("gssid ");
+      Serial.println(gsite);
+      Serial.print("site ");
+      Serial.println(site);
+      if(strcmp(gsite, site) != 0 & strcmp(gsite, "") != 0){
+        Serial.println("***********************************************");
+        Serial.println("cambio sito");
+        Serial.println("***********************************************");
+        ssid=gssid;
+      } else {
+        Serial.println("***********************************************");
+        Serial.println("sito CONFERMATO");
+        Serial.println("***********************************************");
+      }
+      gssid = doc["SSID"];
+      Serial.print("gssid ");
+      Serial.println(gssid);
+      Serial.print("SSID ");
+      Serial.println(ssid);
+      if(strcmp(gssid, ssid) != 0 & strcmp(gssid, "") != 0){
+        Serial.println("***********************************************");
+        Serial.println("cambio SSID");
+        Serial.println("***********************************************");
+        ssid=gssid;
+      } else {
+        Serial.println("***********************************************");
+        Serial.println("SSID CONFERMATO");
+        Serial.println("***********************************************");
+      }
+    }
   }
-  payload = "";
-  postData = "board=";
-  postData += board; 
-  strcat(destination ,site);
-  strcat(destination ,"getdata.php");
-  Serial.println("---------------");
-  Serial.println(destination);
-  http.begin(destination);
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  httpCode = http.POST(postData);
-  payload = http.getString();
-  Serial.print("httpCode: ");
-  Serial.println(httpCode);
-  Serial.print("payload: ");
-  Serial.println(payload);
-  http.end();
-  DeserializationError error = deserializeJson(doc, payload);
-  if (error) {
-    Serial.print(F("Failed to parse JSON"));
-    Serial.println(error.f_str());
-  } else {
-    gsite = doc["site"];
-    Serial.print("gssid ");
-    Serial.println(gsite);
-    Serial.print("site ");
-    Serial.println(site);
-    if(strcmp(gsite, site) != 0 & strcmp(gsite, "") != 0){
-      Serial.println("***********************************************");
-      Serial.println("cambio sito");
-      Serial.println("***********************************************");
-      ssid=gssid;
-    } else {
-      Serial.println("***********************************************");
-      Serial.println("sito CONFERMATO");
-      Serial.println("***********************************************");
-    }
-    gssid = doc["SSID"];
-    Serial.print("gssid ");
-    Serial.println(gssid);
-    Serial.print("SSID ");
-    Serial.println(ssid);
-    if(strcmp(gssid, ssid) != 0 & strcmp(gssid, "") != 0){
-      Serial.println("***********************************************");
-      Serial.println("cambio SSID");
-      Serial.println("***********************************************");
-      ssid=gssid;
-    } else {
-      Serial.println("***********************************************");
-      Serial.println("SSID CONFERMATO");
-      Serial.println("***********************************************");
-    }
+  else{
+    Serial.print(F("Failed to open DNS"));
   }
 }
 
@@ -370,10 +374,10 @@ void connect(){
       Serial.println("-------------");
       Serial.println("Abilitato");
       Serial.println("***********************************************");
-      updatedata("CONNECT");
+      updatedata("CONNECT " + String(r));
       break;
     }
-    delay(r*60000);
+    delay(r*60000);//ad ogni tentavio aumento il ritardo di un minuto
   }
   if (r==10) ESP.restart();
 }
@@ -420,7 +424,7 @@ void setup() {
   // config();
   connect();
   tmz();
-  updatedata("SETUP");
+  updatedata(board);
   status="OFF";
   tempo=0;
   delta=0;
