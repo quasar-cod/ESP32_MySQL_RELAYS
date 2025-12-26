@@ -36,68 +36,23 @@ const char* gsite = nullptr;
 JsonDocument doc; 
 char destination[255];
 
+int dutyc;
+int dutys;
 int tempo;
 int delta;
 String status;
 bool ko;
 int pt;
+#include "miotime.h"
 #include <time.h>
 #define MY_NTP_SERVER "it.pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
-time_t now;
-tm tmn;
+
 const char* time_on;
 const char* time_off;
 const char* S_time_on="06:30:00";
 const char* S_time_off="23:30:00";
 
-String dateYMD(){
-  time(&now);
-  localtime_r(&now, &tmn);
-  String a = String(tmn.tm_year + 1900);
-  String m = "00" + String(tmn.tm_mon);
-  String mm = m.substring(m.length()-2);
-  String g = "00" + String(tmn.tm_mday);
-  String gg = g.substring(g.length()-2);
-  String amg = a + ":" + mm + ":" + gg;
-  return(amg);
-}
-String timeHMS(){
-  time(&now);
-  localtime_r(&now, &tmn);
-  String h = "00" + String(tmn.tm_hour);
-  String hh = h.substring(h.length()-2);
-  String m = "00" + String(tmn.tm_min);
-  String mm = m.substring(m.length()-2);
-  String s = "00" + String(tmn.tm_sec);
-  String ss = s.substring(s.length()-2);
-  String hms = hh + ":" + mm + ":" + ss;
-  return(hms);
-}
-String timeHM(){
-  time(&now);
-  localtime_r(&now, &tmn);
-  String h = "00" + String(tmn.tm_hour);
-  String hh = h.substring(h.length()-2);
-  String m = "00" + String(tmn.tm_min);
-  String mm = m.substring(m.length()-2);
-  String hms = hh + ":" + mm + ":00";
-  return(hms);
-}
-String timeM(){
-  time(&now);
-  localtime_r(&now, &tmn);
-  String m = "00" + String(tmn.tm_min);
-  String mm = m.substring(m.length()-2);
-  return(mm);
-}
-String timeS(){
-  time(&now);
-  localtime_r(&now, &tmn);
-  String s = "00" + String(tmn.tm_sec);
-  String ss = s.substring(s.length()-2);
-  return(ss);
-}
 
 void updatedata(String actv){
   payload = "";
@@ -151,6 +106,8 @@ void getdata(){
     activity = doc["activity"];
     time_on = doc["time_on"];
     time_off = doc["time_off"];
+    dutyc = doc["dutyc"];
+    dutys = doc["dutys"];
     Serial.print("activity ");
     Serial.print(activity);
     Serial.print("on ");
@@ -172,7 +129,7 @@ void relays(){
     Serial.println("***********************************************");
     Serial.println("APERTURA ");
     Serial.println("***********************************************");
-    delay (30000);
+    delay (dutys);
     digitalWrite(RELE_01, LOW); 
     delay (40000);
   }
@@ -184,7 +141,7 @@ void relays(){
     Serial.println("***********************************************");
     Serial.println("CHIUSURA ");
     Serial.println("***********************************************");
-    delay (30000);
+    delay (dutys);
     digitalWrite(RELE_02, LOW); 
     delay (40000);
   }
@@ -220,7 +177,7 @@ void relays(){
     Serial.println("***********************************************");
   }
   delta=millis()-tempo;
-  if(delta > 30000  && status!="OFF"){
+  if(delta > dutyc  && status!="OFF"){
     digitalWrite(RELE_01, LOW); 
     digitalWrite(RELE_02, LOW); 
     status="OFF";
@@ -374,10 +331,10 @@ void connect(){
       Serial.println("-------------");
       Serial.println("Abilitato");
       Serial.println("***********************************************");
-      updatedata("CONNECT " + String(r));
+      updatedata("CONN" + String(r));
       break;
     }
-    delay(r*60000);//ad ogni tentavio aumento il ritardo di un minuto
+    delay(r*60000);//ad ogni tentativo aumento il ritardo di un minuto
   }
   if (r==10) ESP.restart();
 }

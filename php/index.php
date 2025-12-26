@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Tapparelle</title>
+<meta charset="UTF-8">
 <style>
 
     html {
@@ -119,10 +118,6 @@
 </style>
 </head>
 <body>
-  <div class="topnav">
-    Tappa
-  </div>
-  <br>
   <div id="config-list">
     <p>Loading data...</p>
   </div>
