@@ -3,27 +3,20 @@
 #include <ArduinoJSON.h>
 #include <ESPmDNS.h>
 #define ADDR "tappa" 
-//valori led blu per scheda dev
-// #define ON_Board_LED 2
-// valori per scheda relè esterna
-// #define RELE_01 26
-// #define RELE_02 27
-//NB il relè ha la logica invertita
 
 //valori per scheda relè a 220V
-#define ON_Board_LED 23
+#define LED 23
 #define RELE_01 16
 #define RELE_02 17
 
-int i1 = 3;//1 soggiorno 2 tavernetta 3 notte
-// const char* ssid = "TIM-39751438";//1 soggiorno
-// const char* ssid = "TIM-39751438_TENDA";//2 tavernetta
-const char* ssid = "TIM-39751438_EXT";// 3 notte
-
-const char* password = "EFuPktKzk6utU2y5a5SEkUUQ";
+// const char* ssid = "TIM-24326654";// soggiorno
+const char* ssid = "TIM-24326654_EXT";// notte
+// const char* ssid = "TIM-24326654_TENDA";//tavernetta
+const char* password = "T9ZDHXACUfdTUC33DcTCASsz";
 const char* site = "http://myhomesmart.altervista.org/";
 //const char* site = "http://hp-i3/tappa/";
 
+int i1 = 1;//1 soggiorno 2 giardino 3 cucinino 4 notte 5 tavernetta 6 basculante
 String board;
 String payload;
 String postData;
@@ -43,7 +36,6 @@ int delta;
 String status;
 bool ko;
 int pt;
-#include "miotime.h"
 #include <time.h>
 #define MY_NTP_SERVER "it.pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
@@ -53,17 +45,27 @@ const char* time_off;
 const char* S_time_on="06:30:00";
 const char* S_time_off="23:30:00";
 
+// Compact time helpers (minimized lines)
+time_t now;
+tm tmn;
+static void upd(){time(&now); localtime_r(&now,&tmn); }
+static String p(int v){ String s = "00" + String(v); return s.substring(s.length()-2); }
+// String dateYMD(){ upd(); return String(tmn.tm_year+1900) + ":" + p(tmn.tm_mon+1) + ":" + p(tmn.tm_mday); }
+// String timeHMS(){ upd(); return p(tmn.tm_hour) + ":" + p(tmn.tm_min) + ":" + p(tmn.tm_sec); }
+String timeHM(){ upd(); return p(tmn.tm_hour) + ":" + p(tmn.tm_min) + ":00"; }
+String timeM(){ upd(); return p(tmn.tm_min); }
+// String timeS(){ upd(); return p(tmn.tm_sec); }
 
-void updatedata(String actv){
+void update_activity(String actv){
   payload = "";
   postData = "board=";
   postData += board;
   postData +="&activity="+actv;
   Serial.println("---------------");
-  Serial.println("updatedata");  
+  Serial.println("update_activity");  
   Serial.println(postData);
   strcpy(destination ,site);
-  strcat(destination ,"updatedata.php");
+  strcat(destination ,"update_activity.php");
   Serial.println(destination);
   http.begin(destination);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded"); 
@@ -71,28 +73,28 @@ void updatedata(String actv){
   payload = http.getString();
   Serial.print("httpCode : ");
   Serial.println(httpCode);
-  Serial.print("payload  : ");
+  Serial.print("payload : ");
   Serial.println(payload);
   http.end();
 }
 
-void getdata(){
+void relays(){
   payload = "";
   postData = "board=";
   postData += board;
   Serial.println("---------------");
-  Serial.println("getdata");
+  Serial.println("get_activity");
   Serial.println(postData);
   strcpy(destination ,site);
-  strcat(destination ,"getdata.php");
+  strcat(destination ,"get_activity.php");
   Serial.println(destination);
   http.begin(destination);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   httpCode = http.POST(postData);
   payload = http.getString();
-  Serial.print("httpCode : ");
+  Serial.print("httpCode: ");
   Serial.println(httpCode);
-  Serial.print("payload  : ");
+  Serial.print("payload: ");
   Serial.println(payload);
   http.end();
   DeserializationError error = deserializeJson(doc, payload);
@@ -100,6 +102,10 @@ void getdata(){
     ko=true;
     Serial.print(F("Failed to parse JSON: "));
     Serial.println(error.f_str());
+    time_on="06:30:00";
+    time_off="23:30:00";
+    dutyc = 10000;
+    dutys = 10000;
   }
   else {
     ko=false;
@@ -107,53 +113,52 @@ void getdata(){
     time_on = doc["time_on"];
     time_off = doc["time_off"];
     dutyc = doc["dutyc"];
-    dutys = doc["dutys"];
     Serial.print("activity ");
     Serial.print(activity);
-    Serial.print("on ");
+    Serial.print(" on ");
     Serial.print(time_on);
     Serial.print(" off ");
     Serial.println(time_off);
   }
-}
-
-void relays(){
   String orario=timeHM();
   Serial.print("orario ");
   Serial.println(orario);
+  Serial.println("CKP: APERTURA da schedulazione");
   if ((orario == time_on && status!="UP" && ko==false)||
-    (orario == S_time_on && ko==true)) {//&& è booleano mentre & è bitwise
+    (orario == S_time_on && ko==true)) {//se non c'è connessione
     digitalWrite(RELE_02, LOW);
     delay(100);//aspetto per evitare inerzia motore in caso di inversione
     digitalWrite(RELE_01, HIGH); 
     Serial.println("***********************************************");
-    Serial.println("APERTURA ");
+    Serial.println("APERTURA da schedulazione");
     Serial.println("***********************************************");
     delay (dutys);
     digitalWrite(RELE_01, LOW); 
-    delay (40000);
+    delay (60000);
   }
+  Serial.println("CKP: CHIUSURA da schedulazione");
   if ((orario == time_off && status!="DOWN" && ko==false)||
     (orario == S_time_off && ko==true)) {
     digitalWrite(RELE_01, LOW);
     delay(100);//aspetto per evitare inerzia motore in caso di inversione
     digitalWrite(RELE_02, HIGH); 
     Serial.println("***********************************************");
-    Serial.println("CHIUSURA ");
+    Serial.println("CHIUSURA da schedulazione");
     Serial.println("***********************************************");
     delay (dutys);
     digitalWrite(RELE_02, LOW); 
-    delay (40000);
+    delay (60000);
   }
-
+  Serial.println("CKP: STOP da comando");
   if(strcmp(activity, "OFF") == 0 && status!="OFF"){
     digitalWrite(RELE_01, LOW); 
     digitalWrite(RELE_02, LOW); 
     status="OFF";
     Serial.println("***********************************************");
-    Serial.println("SPEGNIMENTO");
+    Serial.println("STOP da comando");
     Serial.println("***********************************************");
   }
+  Serial.println("CKP: APERTURA da comando");
   if(strcmp(activity, "UP") == 0 && status!="UP"){
     digitalWrite(RELE_02, LOW);
     delay(100);//aspetto per evitare inerzia motore in caso di inversione
@@ -162,9 +167,10 @@ void relays(){
     tempo=millis();
     delta=0;
     Serial.println("***********************************************");
-    Serial.println("APERTURA ");
+    Serial.println("APERTURA da comando");
     Serial.println("***********************************************");
   }
+  Serial.println("CKP: CHIUSURA da comando");
   if(strcmp(activity, "DOWN") == 0 && status!="DOWN"){
     digitalWrite(RELE_01, LOW);
     delay(100);//aspetto per evitare inerzia motore in caso di inversione
@@ -173,125 +179,26 @@ void relays(){
     tempo=millis();
     delta=0;
     Serial.println("***********************************************");
-    Serial.println("CHIUSURA ");
+    Serial.println("CHIUSURA da comando");
     Serial.println("***********************************************");
   }
   delta=millis()-tempo;
+  Serial.println("CKP: STOP da TIMEOUT");
   if(delta > dutyc  && status!="OFF"){
     digitalWrite(RELE_01, LOW); 
     digitalWrite(RELE_02, LOW); 
     status="OFF";
     Serial.println("***********************************************");
-    Serial.println("TIMEOUT");
+    Serial.println("STOP da TIMEOUT");
     Serial.println("***********************************************");
-    updatedata("OFF");
+    update_activity("OFF");
   }
-  Serial.print("status ");
+  Serial.print("status: ");
   Serial.println(status);
-  Serial.print("tempo ");
+  Serial.print("tempo: ");
   Serial.println(tempo);
-  Serial.print("delta ");
+  Serial.print("delta:a ");
   Serial.println(delta);
-}
-
-void config(){
-  connecting_process_timed_out = 10;
-  WiFi.mode(WIFI_STA);
-  WiFi.begin("Redmi14c","manu1234");
-//NB se uso il cellulare non posso partire da una pagina nella rete locale perchè non è esposta su internet 
-  Serial.println("\n***********************************************");
-  Serial.println("Connecting to MASTER");
-  Serial.println("***********************************************");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");//4 flash 2 secondi
-    digitalWrite(ON_Board_LED,HIGH);
-    delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(200);
-    digitalWrite(ON_Board_LED,HIGH);
-    delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(200);
-    digitalWrite(ON_Board_LED,HIGH);
-    delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(200);
-    digitalWrite(ON_Board_LED,HIGH);
-    delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(1000);
-    if(connecting_process_timed_out > 0) connecting_process_timed_out--;
-    if(connecting_process_timed_out == 0) {
-      Serial.println("\n***********************************************");
-      Serial.println("NOT connected to MASTER");
-      Serial.println("***********************************************");
-      return;
-    }
-  }
-  Serial.println("\nSuccessfully connected to ");
-  Serial.println(WiFi.SSID());
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-  Serial.println("-------------");
-  Serial.println("Abilito dns");
-  if (MDNS.begin(ADDR)) {
-    Serial.println("Abilitato");
-    payload = "";
-    postData = "board=";
-    postData += board; 
-    strcat(destination ,site);
-    strcat(destination ,"getdata.php");
-    Serial.println("---------------");
-    Serial.println(destination);
-    http.begin(destination);
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    httpCode = http.POST(postData);
-    payload = http.getString();
-    Serial.print("httpCode: ");
-    Serial.println(httpCode);
-    Serial.print("payload: ");
-    Serial.println(payload);
-    http.end();
-    DeserializationError error = deserializeJson(doc, payload);
-    if (error) {
-      Serial.print(F("Failed to parse JSON"));
-      Serial.println(error.f_str());
-    } else {
-      gsite = doc["site"];
-      Serial.print("gssid ");
-      Serial.println(gsite);
-      Serial.print("site ");
-      Serial.println(site);
-      if(strcmp(gsite, site) != 0 & strcmp(gsite, "") != 0){
-        Serial.println("***********************************************");
-        Serial.println("cambio sito");
-        Serial.println("***********************************************");
-        ssid=gssid;
-      } else {
-        Serial.println("***********************************************");
-        Serial.println("sito CONFERMATO");
-        Serial.println("***********************************************");
-      }
-      gssid = doc["SSID"];
-      Serial.print("gssid ");
-      Serial.println(gssid);
-      Serial.print("SSID ");
-      Serial.println(ssid);
-      if(strcmp(gssid, ssid) != 0 & strcmp(gssid, "") != 0){
-        Serial.println("***********************************************");
-        Serial.println("cambio SSID");
-        Serial.println("***********************************************");
-        ssid=gssid;
-      } else {
-        Serial.println("***********************************************");
-        Serial.println("SSID CONFERMATO");
-        Serial.println("***********************************************");
-      }
-    }
-  }
-  else{
-    Serial.print(F("Failed to open DNS"));
-  }
 }
 
 void connect(){
@@ -306,17 +213,17 @@ void connect(){
     Serial.println("***********************************************");
     while (WiFi.status() != WL_CONNECTED & (connecting_process_timed_out > 0)){
       Serial.print(".");//3 flash 1.7 secondi
-      digitalWrite(ON_Board_LED,HIGH);
+      digitalWrite(LED,HIGH);
       delay(100);
-      digitalWrite(ON_Board_LED,LOW);
+      digitalWrite(LED,LOW);
       delay(200);
-      digitalWrite(ON_Board_LED,HIGH);
+      digitalWrite(LED,HIGH);
       delay(100);
-      digitalWrite(ON_Board_LED,LOW);
+      digitalWrite(LED,LOW);
       delay(200);
-      digitalWrite(ON_Board_LED,HIGH);
+      digitalWrite(LED,HIGH);
       delay(100);
-      digitalWrite(ON_Board_LED,LOW);
+      digitalWrite(LED,LOW);
       delay(1000);
       connecting_process_timed_out--;
     }
@@ -325,13 +232,14 @@ void connect(){
     Serial.println(WiFi.SSID());
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-    Serial.println("-------------");
+    String MAC = WiFi.macAddress();
+    Serial.print("MAC Address: ");
+    Serial.println(MAC);
     Serial.println("Abilito dns");
     if (MDNS.begin(ADDR)){
-      Serial.println("-------------");
       Serial.println("Abilitato");
       Serial.println("***********************************************");
-      updatedata("CONN" + String(r));
+      update_activity("CONN" + String(r));
       break;
     }
     delay(r*60000);//ad ogni tentativo aumento il ritardo di un minuto
@@ -345,19 +253,27 @@ void tmz(){
   configTime(0,0, MY_NTP_SERVER); //sulle ESP32 occorre separare in tre righe 
   setenv("TZ","CET-1CEST,M3.5.0/02,M10.5.0/03" ,1);  //  Now adjust the TZ.  Clock settings are adjusted to show the new local time
   tzset();
-  Serial.println("\n***********************************************");
-  Serial.println("NTP TZ DST - wait 1 minute");
   Serial.println("***********************************************");
-  for (int i=0;i<44;i++){
-    Serial.print(".");//2 flash 1.4 secondi
-    digitalWrite(ON_Board_LED,HIGH);
+  Serial.println("Connecting to NTP_SERVER");
+  Serial.println("***********************************************");
+  time_t now = time(nullptr);
+  int ntpRetry = 0;
+  // 1738713600 = Thursday, February 5, 2026 00:00:00
+  while (now < 1738713600 && ntpRetry < 100) { 
+    Serial.print(".");//2 flash
+    now = time(nullptr); 
+    ntpRetry++;
+    delay(1000); // Small delay to let the UDP packet arrive
+    digitalWrite(LED,LOW);
     delay(100);
-    digitalWrite(ON_Board_LED,LOW);
+    digitalWrite(LED,HIGH);
     delay(200);
-    digitalWrite(ON_Board_LED,HIGH);
+    digitalWrite(LED,LOW);
     delay(100);
-    digitalWrite(ON_Board_LED,LOW);
-    delay(1000);
+    digitalWrite(LED,HIGH);
+  }
+  if (now < 1738713600) {
+    ESP.restart();
   }
 }
 
@@ -370,18 +286,17 @@ void setup() {
   Serial.println("***********************************************");
   pinMode(RELE_01,OUTPUT);
   pinMode(RELE_02,OUTPUT);
-  pinMode(ON_Board_LED,OUTPUT);
+  pinMode(LED,OUTPUT);
   digitalWrite(RELE_01, HIGH);
-  delay(250);
+  delay(300);
   digitalWrite(RELE_01, LOW);
-  delay(250);
+  delay(200);
   digitalWrite(RELE_02, HIGH);
-  delay(250);
+  delay(300);
   digitalWrite(RELE_02, LOW);
-  // config();
   connect();
   tmz();
-  updatedata(board);
+  update_activity("SETUP");
   status="OFF";
   tempo=0;
   delta=0;
@@ -392,16 +307,15 @@ void loop() {
   // if(WiFi.status()== WL_CONNECTED) {//spesso genera falsi errori
   // sostituendo .waitForConnectResult a .status non si hanno falsi errori
   if(WiFi.waitForConnectResult()== WL_CONNECTED) {
-    digitalWrite(ON_Board_LED,HIGH);
+    digitalWrite(LED,HIGH);
     delay(100);
-    digitalWrite(ON_Board_LED,LOW);
+    digitalWrite(LED,LOW);
     delay(2000);
-    getdata(); // mettendo un delay dopo la waitForConnectResult la funzione getdata fallisce con minore frequnza
-    relays();
+    relays(); // mettendo un delay dopo la waitForConnectResult la funzione get_activity fallisce con minore frequnza
     if(timeM()==("00") && status=="OFF") {
       if(pt==0){
         delay(i1*10000);
-        updatedata("TIME");
+        update_activity("TIME");
         pt=1;
       }
     }
@@ -410,7 +324,6 @@ void loop() {
     }
   }
   else{
-    config();
     connect();
   }
 }

@@ -5,7 +5,7 @@
 $myArray = array(); // Initialize an empty array instead of a single object
 $pdo = Database::connect();
 
-$sql = 'SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY board ORDER BY date DESC, time DESC ) AS rn FROM esp32_activity) AS RankedData WHERE rn = 1 and activity in ("UP","DOWN","OFF")';
+$sql = 'SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY board ORDER BY ts DESC) AS rn FROM esp32_activity) AS RankedData WHERE rn = 1';
 
 $q = $pdo->prepare($sql);
 $q->execute();
@@ -18,8 +18,7 @@ while ($row = $q->fetch()) {
     // 2. Map the data from the row to the object properties
     $myObj->board = $row['board'];
     $myObj->activity = $row['activity'];
-    $myObj->date = $row['date'];
-    $myObj->time = $row['time'];
+    $myObj->ts = $row['ts'];
     
     // 3. Add the populated object to the array
     array_push($myArray, $myObj); 
