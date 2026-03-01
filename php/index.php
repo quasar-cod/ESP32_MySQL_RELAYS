@@ -155,7 +155,7 @@
         // console.log(now);
         const myObj = JSON.parse(this.responseText);
         myObj.forEach((item, index) => {
-          const fullDateTimeString = item.date + 'T' + item.time; 
+          const fullDateTimeString = item.ts; 
           const itemTimestamp = new Date(fullDateTimeString).getTime();          
           // console.log(item.board + " " + now + " " + itemTimestamp + " " + item.activity); 
           // console.log(now - itemTimestamp);
@@ -219,7 +219,7 @@
         listContainer.innerHTML = '<p>No configuration records found.</p>';
         return;
       }
-      console.log("geting config");
+      console.log("getting config");
       // 3. Iterate over the array and create list items with switches
       dataArray.forEach((item, index) => {
         // Create a unique ID suffix for inputs/labels in this row

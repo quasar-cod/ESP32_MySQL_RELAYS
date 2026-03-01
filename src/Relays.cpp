@@ -30,7 +30,6 @@ JsonDocument doc;
 char destination[255];
 
 int dutyc;
-int dutys;
 int tempo;
 int delta;
 String status;
@@ -105,7 +104,6 @@ void relays(){
     time_on="06:30:00";
     time_off="23:30:00";
     dutyc = 10000;
-    dutys = 10000;
   }
   else {
     ko=false;
@@ -113,12 +111,14 @@ void relays(){
     time_on = doc["time_on"];
     time_off = doc["time_off"];
     dutyc = doc["dutyc"];
-    Serial.print("activity ");
-    Serial.print(activity);
-    Serial.print(" on ");
-    Serial.print(time_on);
-    Serial.print(" off ");
-    Serial.println(time_off);
+    // Serial.print("activity ");
+    // Serial.print(activity);
+    // Serial.print(" time_on ");
+    // Serial.print(time_on);
+    // Serial.print(" time_off ");
+    // Serial.print(time_off);
+    // Serial.print(" duty cycle ");
+    // Serial.println(dutyc);
   }
   String orario=timeHM();
   Serial.print("orario ");
@@ -132,9 +132,9 @@ void relays(){
     Serial.println("***********************************************");
     Serial.println("APERTURA da schedulazione");
     Serial.println("***********************************************");
-    delay (dutys);
+    delay (dutyc);
     digitalWrite(RELE_01, LOW); 
-    delay (60000);
+    delay (61000-dutyc);//aspetto un po' più di un minuto per evitare nuve attività schedulate allo stesso minuto
   }
   Serial.println("CKP: CHIUSURA da schedulazione");
   if ((orario == time_off && status!="DOWN" && ko==false)||
@@ -145,9 +145,9 @@ void relays(){
     Serial.println("***********************************************");
     Serial.println("CHIUSURA da schedulazione");
     Serial.println("***********************************************");
-    delay (dutys);
+    delay (dutyc);
     digitalWrite(RELE_02, LOW); 
-    delay (60000);
+    delay (61000-dutyc);
   }
   Serial.println("CKP: STOP da comando");
   if(strcmp(activity, "OFF") == 0 && status!="OFF"){
@@ -197,7 +197,7 @@ void relays(){
   Serial.println(status);
   Serial.print("tempo: ");
   Serial.println(tempo);
-  Serial.print("delta:a ");
+  Serial.print("delta: ");
   Serial.println(delta);
 }
 
@@ -278,7 +278,7 @@ void tmz(){
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(230400);
   board="ESP32_0" + String(i1);
   Serial.println("\n***********************************************");
   Serial.print("Initialized serial communications with board ");
@@ -296,7 +296,7 @@ void setup() {
   digitalWrite(RELE_02, LOW);
   connect();
   tmz();
-  update_activity("SETUP");
+  // update_activity("SETUP");
   status="OFF";
   tempo=0;
   delta=0;
